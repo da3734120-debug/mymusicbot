@@ -16,7 +16,6 @@ intents.members = True
 bot = commands.Bot(command_prefix="T!", intents=intents)
 bot.remove_command('help')
 
-# 💡 កែសម្រួល OPTIONS ឱ្យត្រូវស្ដង់ដារទម្លុះប្រព័ន្ធប្លុក
 YTDL_OPTIONS = {
     'format': 'bestaudio/best',
     'noplaylist': True,
@@ -67,7 +66,7 @@ async def play_audio_async(ctx, song_data):
 
         last_played_title[ctx.guild.id] = song_data['title']
         
-        # 💡 កូដស្ដង់ដារសម្រាប់ម៉ាស៊ីន Cloud Linux លុប executable ចេញស្អាតបាត
+        # ✅ កូដស្ដង់ដារសម្រាប់ម៉ាស៊ីន Cloud Linux លុប executable ចេញស្អាតបាត
         source = await discord.FFmpegOpusAudio.from_probe(
             song_data['url'], 
             **FFMPEG_OPTIONS
@@ -218,7 +217,7 @@ async def play(ctx, *, search):
 
     query = f"scsearch:{search}"
     
-    # 💡 បើអ្នកប្រើដាក់លីង YouTube មក កូដនឹងទាញយកចំណងជើង រួចស្វែងរកតាម SoundCloud វិញស្វ័យប្រវត្តដើម្បីទម្លុះការប្លុកលីង
+    # 💡 ប្រព័ន្ធបំលែងឆ្លាតវៃ៖ បើអ្នកប្រើដាក់លីង YouTube មក វានឹងទៅលបដកយកចំណងជើង រួចស្វែងរកតាម SoundCloud វិញស្វ័យប្រវត្តដើម្បីទម្លុះការប្លុក IP
     if search.startswith("http://") or search.startswith("https://"):
         if "youtube.com" in search or "youtu.be" in search:
             try:
@@ -263,6 +262,10 @@ async def play(ctx, *, search):
         await play_audio_async(ctx, song_data)
 
 @bot.command()
+async def skip(ctx):
+    if ctx.voice_client and (ctx.voice_client.is_playing() or ctx.voice_client.is_paused()):
+        ctx.voice_client.stop()
+        @bot.command()
 async def skip(ctx):
     if ctx.voice_client and (ctx.voice_client.is_playing() or ctx.voice_client.is_paused()):
         ctx.voice_client.stop()
