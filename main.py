@@ -266,7 +266,7 @@ async def skip(ctx):
     if ctx.voice_client and (ctx.voice_client.is_playing() or ctx.voice_client.is_paused()):
         ctx.voice_client.stop()
         @bot.command()
-async def skip(ctx):
+        async def skip(ctx):
     if ctx.voice_client and (ctx.voice_client.is_playing() or ctx.voice_client.is_paused()):
         ctx.voice_client.stop()
         await ctx.send(embed=discord.Embed(description="⏭️ Skipped successfully!", color=0x2b2d31))
