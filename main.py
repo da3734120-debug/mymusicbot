@@ -4,7 +4,7 @@ import yt_dlp
 import asyncio
 import random
 import logging
-import os  # 👈 ថែមបន្ទាត់នេះចូល នៅខាងលើបង្អស់នៃកូដរបស់បង
+import os
 
 logging.basicConfig(level=logging.INFO)
 
@@ -16,6 +16,7 @@ intents.members = True
 bot = commands.Bot(command_prefix="T!", intents=intents)
 bot.remove_command('help')
 
+# 💡 កែសម្រួល OPTIONS ឱ្យត្រូវស្ដង់ដារទម្លុះប្រព័ន្ធប្លុក
 YTDL_OPTIONS = {
     'format': 'bestaudio/best',
     'noplaylist': True,
@@ -24,12 +25,6 @@ YTDL_OPTIONS = {
     'skip_download': True,
     'force_generic_extractor': False,
     'ignoreerrors': True,
-    # 💡 បន្ថែមកូដក្លែងខ្លួនជាកម្មវិធីរុករកទម្លុះ Bot Block ឆ្នាំ ២០២៦
-    'http_headers': {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.9',
-    },
     'nocheckcertificate': True,
     'geo_bypass': True
 }
@@ -72,7 +67,7 @@ async def play_audio_async(ctx, song_data):
 
         last_played_title[ctx.guild.id] = song_data['title']
         
-        # 💡 កូដកែសម្រួលត្រឹមត្រូវ៖ គ្មាន executable គ្មានវង់ក្រចកលើស និងមាន block except ត្រឹមត្រូវ
+        # 💡 កូដស្ដង់ដារសម្រាប់ម៉ាស៊ីន Cloud Linux លុប executable ចេញស្អាតបាត
         source = await discord.FFmpegOpusAudio.from_probe(
             song_data['url'], 
             **FFMPEG_OPTIONS
@@ -130,9 +125,9 @@ async def fetch_and_play_autoplay(ctx):
 
     embed = discord.Embed(description="⏭️ Autoplay: Fetching a fresh track...", color=0x2b2d31)
     await ctx.send(embed=embed)
-    with yt_dlp. YoutubeDL(YTDL_OPTIONS) as ytdl:
-        
-     try:
+
+    with yt_dlp.YoutubeDL(YTDL_OPTIONS) as ytdl:
+        try:
             info = await safe_extract_info(ytdl, f"scsearch30:{fallback_keyword}")
             if info and 'entries' in info and info['entries']:
                 valid_entries = []
@@ -165,16 +160,14 @@ async def fetch_and_play_autoplay(ctx):
                 else:
                     check_queue(ctx)
             else:
-                check_queue(ctx) 
-     except Exception as e:
+                check_queue(ctx)
+        except Exception as e:
             print(f"Autoplay Search Error: {e}")
             check_queue(ctx)
 
 @bot.event
 async def on_ready():
     print(f'=== TwT Music ONLINE ===')
-    print(f'Logged in as: {bot.user.name}')
-    print(f'========================')
 
 @bot.command(name="help")
 async def help_command(ctx):
@@ -185,7 +178,7 @@ async def help_command(ctx):
     )
     embed.add_field(
         name="🎤 Music Commands",
-        value="• T!p [song name/link] — Play music from YouTube Link, SoundCloud Link, or Search by Name\n"
+        value="• T!p [song name/link] — Play music from YouTube Link or Search by Name\n"
               "• T!autoplay — Toggle infinite automatic playback\n"
               "• T!skip — Skip the currently playing track",
         inline=False
@@ -225,17 +218,16 @@ async def play(ctx, *, search):
 
     query = f"scsearch:{search}"
     
-    # 💡 ប្រព័ន្ធទម្លុះការប្លុក៖ បើអ្នកប្រើដាក់លីង YouTube មក កូដនឹងទៅលបដកយកចំណងជើង រួចស្វែងរកតាម SoundCloud វិញស្វ័យប្រវត្ត
+    # 💡 បើអ្នកប្រើដាក់លីង YouTube មក កូដនឹងទាញយកចំណងជើង រួចស្វែងរកតាម SoundCloud វិញស្វ័យប្រវត្តដើម្បីទម្លុះការប្លុកលីង
     if search.startswith("http://") or search.startswith("https://"):
         if "youtube.com" in search or "youtu.be" in search:
             try:
-                # ទាញយកតែទិន្នន័យចំណងជើង (Title) នៃលីងវីដេអូ YouTube
                 with yt_dlp.YoutubeDL({'quiet': True, 'extract_flat': True}) as ytdl_title:
                     yt_info = await safe_extract_info(ytdl_title, search)
                     if yt_info and 'title' in yt_info:
                         query = f"scsearch:{yt_info['title']}"
             except Exception as e:
-                print(f"Fallback title extraction error: {e}")
+                print(f"Title extraction error: {e}")
 
     with yt_dlp.YoutubeDL(YTDL_OPTIONS) as ytdl:
         try:
@@ -243,11 +235,8 @@ async def play(ctx, *, search):
             if not info:
                 raise Exception("No info found")
             
-            if 'entries' in info:
-                if info['entries']:
-                    target = info['entries'][0] # ចាប់យកបទដំបូងគេបង្អស់ពី SoundCloud
-                else:
-                    raise Exception("No entries found")
+            if 'entries' in info and info['entries']:
+                target = info['entries'][0]
             else:
                 target = info
                 
@@ -272,25 +261,10 @@ async def play(ctx, *, search):
         await ctx.send(embed=embed)
     else:
         await play_audio_async(ctx, song_data)
+
 @bot.command()
 async def skip(ctx):
     if ctx.voice_client and (ctx.voice_client.is_playing() or ctx.voice_client.is_paused()):
         ctx.voice_client.stop()
-        await ctx.send(embed=discord.Embed(description="⏭️ Skipped successfully!", color=0x2b2d31))
-    else:
-        await ctx.send(embed=discord.Embed(description="❌ No song is currently playing.", color=0xff0000))
-
-@bot.command()
-async def stop(ctx):
-    if ctx.guild.id in song_queue: song_queue[ctx.guild.id] = []
-    if ctx.guild.id in last_played_title: del last_played_title[ctx.guild.id]
-    if ctx.guild.id in room_music_style: del room_music_style[ctx.guild.id] 
-    if ctx.guild.id in played_history: del played_history[ctx.guild.id]
-    autoplay_status[ctx.guild.id] = False
-    if ctx.voice_client:
-        await ctx.voice_client.disconnect()
-        
-    await ctx.send(embed=discord.Embed(description="👋 Left the voice channel and cleared configurations.", color=0x2b2d31))
-
-bot.run(os.getenv('DISCORD_TOKEN'))
-
+        await ctx.send(embed=discord.Embed(description="⏭️ Skipped successfully!", color=0x2b2d31))else:await ctx.send(embed=discord.Embed(description="❌ No song is currently playing.", color=0xff0000))@bot.command()async def stop(ctx):if ctx.guild.id in song_queue: song_queue[ctx.guild.id] = []if ctx.guild.id in last_played_title: del last_played_title[ctx.guild.id]if ctx.guild.id in room_music_style: del room_music_style[ctx.guild.id]if ctx.guild.id in played_history: del played_history[ctx.guild.id]autoplay_status[ctx.guild.id] = Falseif ctx.voice_client:await ctx.voice_client.disconnect()await ctx.send(embed=discord.Embed(description="👋 Left the voice channel and cleared configurations.", color=0x2b2d31))
+        bot.run(os.getenv('DISCORD_TOKEN'))
