@@ -223,7 +223,7 @@ async def play(ctx, *, search):
     # 💡 កែសម្រួល៖ បើអ្នកប្រើដាក់លីង YouTube ឱ្យវាចាក់លីងភ្លាម បើដាក់ឈ្មោះឱ្យវា Search តាម YouTube
     query = search
     if not search.startswith("http://") and not search.startswith("https://"):
-        query = f"ytsearch1:{search}"
+        query = f"scsearch:{search}"
 
     with yt_dlp.YoutubeDL(YTDL_OPTIONS) as ytdl:
         try:
