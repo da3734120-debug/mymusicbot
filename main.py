@@ -43,7 +43,8 @@ YTDL_OPTIONS = {
     'force_generic_extractor': False,
     'ignoreerrors': True,
     'nocheckcertificate': True,
-    'geo_bypass': True
+    'geo_bypass': True,
+    'extractor_args': {'youtube': {'player_client': ['android', 'web']}}
 }
 
 FFMPEG_OPTIONS = {
