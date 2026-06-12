@@ -279,7 +279,8 @@ async def play(ctx, *, search):
         await ctx.send(embed=embed)
     else:
         await play_audio_async(ctx, song_data)
-        @bot.command()
+
+@bot.command()
 async def skip(ctx):
     if ctx.voice_client and (ctx.voice_client.is_playing() or ctx.voice_client.is_paused()):
         ctx.voice_client.stop()
