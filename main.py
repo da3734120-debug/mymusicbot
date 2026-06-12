@@ -213,7 +213,6 @@ async def autoplay(ctx):
     )
     await ctx.send(embed=embed)
 
-)
 @bot.command(name="p")
 async def play(ctx, *, search):
     if not ctx.author.voice:
