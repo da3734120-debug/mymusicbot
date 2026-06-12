@@ -264,8 +264,8 @@ async def play(ctx, *, search):
 @bot.command()
 async def skip(ctx):
     if ctx.voice_client and (ctx.voice_client.is_playing() or ctx.voice_client.is_paused()):
-        ctx.voice_client.stop()
-        @bot.command()
+        ctx.voice_client.stop() 
+@bot.command() 
 async def skip(ctx):
     if ctx.voice_client and (ctx.voice_client.is_playing() or ctx.voice_client.is_paused()):
         ctx.voice_client.stop()
