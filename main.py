@@ -24,10 +24,14 @@ YTDL_OPTIONS = {
     'skip_download': True,
     'force_generic_extractor': False,
     'ignoreerrors': True,
-    # 💡 បន្ថែមលក្ខខណ្ឌទម្លុះ Bot Block របស់ YouTube ឆ្នាំ ២០២៦
-    'cookiefile': None, 
-    'geo_bypass': True,
-    'nocheckcertificate': True
+    # 💡 បន្ថែមកូដក្លែងខ្លួនជាកម្មវិធីរុករកទម្លុះ Bot Block ឆ្នាំ ២០២៦
+    'http_headers': {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+    },
+    'nocheckcertificate': True,
+    'geo_bypass': True
 }
 
 FFMPEG_OPTIONS = {
@@ -209,6 +213,7 @@ async def autoplay(ctx):
     )
     await ctx.send(embed=embed)
 
+)
 @bot.command(name="p")
 async def play(ctx, *, search):
     if not ctx.author.voice:
@@ -219,10 +224,10 @@ async def play(ctx, *, search):
     
     process_msg = await ctx.send(embed=discord.Embed(description=f"🔍 Processing {search}... please wait.", color=0x2b2d31))
 
-    # 💡 កែសម្រួល៖ បើអ្នកប្រើដាក់លីង YouTube ឱ្យវាចាក់លីងភ្លាម បើដាក់ឈ្មោះឱ្យវា Search តាម YouTube
     query = search
+    # 💡 បើសិនជាអ្នកប្រើមិនបានដាក់លីង http ទេ ទើបវា Search តាមឈ្មោះលើ YouTube
     if not search.startswith("http://") and not search.startswith("https://"):
-        query = f"scsearch:{search}"
+        query = f"ytsearch1:{search}"
 
     with yt_dlp.YoutubeDL(YTDL_OPTIONS) as ytdl:
         try:
@@ -232,7 +237,7 @@ async def play(ctx, *, search):
             
             if 'entries' in info:
                 if info['entries']:
-                    target = info['entries'][0] # ចាប់យកបទដំបូងគេពីលទ្ធផល Search
+                    target = info['entries'][0] # ចាប់យកបទដំបូងគេបង្អស់
                 else:
                     raise Exception("No entries found")
             else:
@@ -259,7 +264,6 @@ async def play(ctx, *, search):
         await ctx.send(embed=embed)
     else:
         await play_audio_async(ctx, song_data)
-
 @bot.command()
 async def skip(ctx):
     if ctx.voice_client and (ctx.voice_client.is_playing() or ctx.voice_client.is_paused()):
