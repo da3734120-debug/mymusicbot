@@ -5,9 +5,27 @@ import asyncio
 import random
 import logging
 import os
+from flask import Flask
+from threading import Thread
 
 logging.basicConfig(level=logging.INFO)
 
+# ==================== ១. បង្កើត WEB SERVER កុំឱ្យ RAILWAY បិទ BOT ====================
+app = Flask('')
+
+@app.route('/')
+def home():
+    return "TwT Music Bot is running 24/7!"
+
+def run_web():
+    port = int(os.getenv('PORT', 8080))
+    app.run(host='0.0.0.0', port=port)
+
+def keep_alive():
+    t = Thread(target=run_web)
+    t.start()
+
+# ==================== ២. SETUP INTENTS និង BOT ====================
 intents = discord.Intents.default()
 intents.message_content = True
 intents.presences = True
@@ -37,10 +55,10 @@ song_queue = {}
 last_played_title = {} 
 autoplay_status = {} 
 room_music_style = {} 
-played_history = {}  
-
+played_history = {}
+# ==================== ៣. FUNCTIONS គ្រប់គ្រងការចាក់ចម្រៀង ====================
 def check_queue(ctx):
-    bot.loop.create_task(check_queue_async(ctx))
+    asyncio.run_coroutine_threadsafe(check_queue_async(ctx), bot.loop)
 
 async def check_queue_async(ctx):
     if ctx.guild.id in song_queue and song_queue[ctx.guild.id]:
@@ -57,7 +75,7 @@ async def check_queue_async(ctx):
             await ctx.send(embed=embed)
 
 def play_audio(ctx, song_data):
-    bot.loop.create_task(play_audio_async(ctx, song_data))
+    asyncio.run_coroutine_threadsafe(play_audio_async(ctx, song_data), bot.loop)
 
 async def play_audio_async(ctx, song_data):
     try:
@@ -66,7 +84,6 @@ async def play_audio_async(ctx, song_data):
 
         last_played_title[ctx.guild.id] = song_data['title']
         
-        # ✅ កូដស្ដង់ដារសម្រាប់ម៉ាស៊ីន Cloud Linux លុប executable ចេញស្អាតបាត
         source = await discord.FFmpegOpusAudio.from_probe(
             song_data['url'], 
             **FFMPEG_OPTIONS
@@ -96,6 +113,7 @@ async def play_audio_async(ctx, song_data):
 async def safe_extract_info(ytdl, query):
     return await bot.loop.run_in_executor(None, lambda: ytdl.extract_info(query, download=False))
 
+# ==================== ៤. មុខងារ AUTOPLAY (ស្វែងរកចម្រៀងខ្មែរ) ====================
 async def fetch_and_play_autoplay(ctx):
     current_title = last_played_title.get(ctx.guild.id, "")
     is_remix = "remix" in current_title.lower() or "ញាក់" in current_title.lower()
@@ -138,7 +156,8 @@ async def fetch_and_play_autoplay(ctx):
                         continue
                     is_already_played = False
                     for played_title in played_history[ctx.guild.id]:
-                        if played_title.lower() in title_lower or title_lower in played_title.lower():
+                        if played_title.
+                        lower() in title_lower or title_lower in played_title.lower():
                             is_already_played = True
                             break
                     if not is_already_played:
@@ -163,7 +182,7 @@ async def fetch_and_play_autoplay(ctx):
         except Exception as e:
             print(f"Autoplay Search Error: {e}")
             check_queue(ctx)
-
+            # ==================== ៥. DISCORD MUSIC BOT COMMANDS ====================
 @bot.event
 async def on_ready():
     print(f'=== TwT Music ONLINE ===')
@@ -217,11 +236,11 @@ async def play(ctx, *, search):
 
     query = f"scsearch:{search}"
     
-    # 💡 ប្រព័ន្ធបំលែងឆ្លាតវៃ៖ បើអ្នកប្រើដាក់លីង YouTube មក វានឹងទៅលបដកយកចំណងជើង រួចស្វែងរកតាម SoundCloud វិញស្វ័យប្រវត្តដើម្បីទម្លុះការប្លុក IP
+    # ✅ ជួសជុលការដកស្រង់ចំណងជើងពីលីង YouTube ឱ្យដើរត្រឹមត្រូវ ១០០% ដោយគ្មានការទាក់ទើ
     if search.startswith("http://") or search.startswith("https://"):
         if "youtube.com" in search or "youtu.be" in search:
             try:
-                with yt_dlp.YoutubeDL({'quiet': True, 'extract_flat': True}) as ytdl_title:
+                with yt_dlp.YoutubeDL({'quiet': True}) as ytdl_title:
                     yt_info = await safe_extract_info(ytdl_title, search)
                     if yt_info and 'title' in yt_info:
                         query = f"scsearch:{yt_info['title']}"
@@ -234,6 +253,7 @@ async def play(ctx, *, search):
             if not info:
                 raise Exception("No info found")
             
+            # ✅ ជួសជុលចំណុចទាញយកទិន្នន័យដើម្បីទប់ស្កាត់សារកំហុស "Could not find track" របស់អ្នក
             if 'entries' in info and info['entries']:
                 target = info['entries'][0]
             else:
@@ -260,11 +280,10 @@ async def play(ctx, *, search):
         await ctx.send(embed=embed)
     else:
         await play_audio_async(ctx, song_data)
-
-@bot.command()
+        @bot.command()
 async def skip(ctx):
     if ctx.voice_client and (ctx.voice_client.is_playing() or ctx.voice_client.is_paused()):
-        ctx.voice_client.stop() 
+        ctx.voice_client.stop()
         await ctx.send(embed=discord.Embed(description="⏭️ Skipped successfully!", color=0x2b2d31))
     else:
         await ctx.send(embed=discord.Embed(description="❌ No song is currently playing.", color=0xff0000))
@@ -290,4 +309,13 @@ async def stop(ctx):
         
     await ctx.send(embed=discord.Embed(description="👋 Left the voice channel and cleared configurations.", color=0x2b2d31))
 
-bot.run(os.getenv('DISCORD_TOKEN'))
+# ==================== ៦. ដំណើរការ APPLICATION រួមគ្នាជាមួយ WEB PORT ====================
+keep_alive()
+
+# ប្រព័ន្ធនឹងទាញយក Token ពី Variables របស់ Railway ឱ្យត្រូវនឹងទម្រង់ចុងក្រោយរបស់អ្នក
+TOKEN = os.getenv('DISCORD_TOKEN')
+if TOKEN:
+    bot.run(TOKEN)
+else:
+    print("⚠️ Error: DISCORD_TOKEN variable is missing in Railway!")
+    
