@@ -266,5 +266,29 @@ async def play(ctx, *, search):
 async def skip(ctx):
     if ctx.voice_client and (ctx.voice_client.is_playing() or ctx.voice_client.is_paused()):
         ctx.voice_client.stop()
-        await ctx.send(embed=discord.Embed(description="⏭️ Skipped successfully!", color=0x2b2d31))else:await ctx.send(embed=discord.Embed(description="❌ No song is currently playing.", color=0xff0000))@bot.command()async def stop(ctx):if ctx.guild.id in song_queue: song_queue[ctx.guild.id] = []if ctx.guild.id in last_played_title: del last_played_title[ctx.guild.id]if ctx.guild.id in room_music_style: del room_music_style[ctx.guild.id]if ctx.guild.id in played_history: del played_history[ctx.guild.id]autoplay_status[ctx.guild.id] = Falseif ctx.voice_client:await ctx.voice_client.disconnect()await ctx.send(embed=discord.Embed(description="👋 Left the voice channel and cleared configurations.", color=0x2b2d31))
-        bot.run(os.getenv('DISCORD_TOKEN'))
+        await ctx.send(embed=discord.Embed(description="⏭️ Skipped successfully!", color=0x2b2d31))
+    else:
+        await ctx.send(embed=discord.Embed(description="❌ No song is currently playing.", color=0xff0000))
+
+@bot.command()
+async def stop(ctx):
+    if ctx.guild.id in song_queue: 
+        song_queue[ctx.guild.id] = []
+        
+    if ctx.guild.id in last_played_title: 
+        del last_played_title[ctx.guild.id]
+        
+    if ctx.guild.id in room_music_style: 
+        del room_music_style[ctx.guild.id]
+        
+    if ctx.guild.id in played_history: 
+        del played_history[ctx.guild.id]
+        
+    autoplay_status[ctx.guild.id] = False
+    
+    if ctx.voice_client:
+        await ctx.voice_client.disconnect()
+        
+    await ctx.send(embed=discord.Embed(description="👋 Left the voice channel and cleared configurations.", color=0x2b2d31))
+
+bot.run(os.getenv('DISCORD_TOKEN'))
