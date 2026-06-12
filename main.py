@@ -23,7 +23,11 @@ YTDL_OPTIONS = {
     'extract_flat': False,
     'skip_download': True,
     'force_generic_extractor': False,
-    'ignoreerrors': True, 
+    'ignoreerrors': True,
+    # 💡 បន្ថែមលក្ខខណ្ឌទម្លុះ Bot Block របស់ YouTube ឆ្នាំ ២០២៦
+    'cookiefile': None, 
+    'geo_bypass': True,
+    'nocheckcertificate': True
 }
 
 FFMPEG_OPTIONS = {
@@ -216,9 +220,10 @@ async def play(ctx, *, search):
     
     process_msg = await ctx.send(embed=discord.Embed(description=f"🔍 Processing {search}... please wait.", color=0x2b2d31))
 
+    # 💡 កែសម្រួល៖ បើអ្នកប្រើដាក់លីង YouTube ឱ្យវាចាក់លីងភ្លាម បើដាក់ឈ្មោះឱ្យវា Search តាម YouTube
     query = search
     if not search.startswith("http://") and not search.startswith("https://"):
-        query = f"scsearch:{search}"
+        query = f"ytsearch1:{search}"
 
     with yt_dlp.YoutubeDL(YTDL_OPTIONS) as ytdl:
         try:
@@ -228,7 +233,7 @@ async def play(ctx, *, search):
             
             if 'entries' in info:
                 if info['entries']:
-                    target = info['entries'][0]
+                    target = info['entries'][0] # ចាប់យកបទដំបូងគេពីលទ្ធផល Search
                 else:
                     raise Exception("No entries found")
             else:
@@ -243,7 +248,7 @@ async def play(ctx, *, search):
             print(f"Search Error: {e}")
             try: await process_msg.delete()
             except: pass
-            embed = discord.Embed(description="❌ Could not find or play this track/link.", color=0xff0000)
+            embed = discord.Embed(description="❌ Could not find or play this track/link. YouTube might be blocking the request.", color=0xff0000)
             return await ctx.send(embed=embed)
         
     if ctx.guild.id not in song_queue:
