@@ -223,10 +223,19 @@ async def play(ctx, *, search):
     
     process_msg = await ctx.send(embed=discord.Embed(description=f"🔍 Processing {search}... please wait.", color=0x2b2d31))
 
-    query = search
-    # 💡 បើសិនជាអ្នកប្រើមិនបានដាក់លីង http ទេ ទើបវា Search តាមឈ្មោះលើ YouTube
-    if not search.startswith("http://") and not search.startswith("https://"):
-        query = f"ytsearch1:{search}"
+    query = f"scsearch:{search}"
+    
+    # 💡 ប្រព័ន្ធទម្លុះការប្លុក៖ បើអ្នកប្រើដាក់លីង YouTube មក កូដនឹងទៅលបដកយកចំណងជើង រួចស្វែងរកតាម SoundCloud វិញស្វ័យប្រវត្ត
+    if search.startswith("http://") or search.startswith("https://"):
+        if "youtube.com" in search or "youtu.be" in search:
+            try:
+                # ទាញយកតែទិន្នន័យចំណងជើង (Title) នៃលីងវីដេអូ YouTube
+                with yt_dlp.YoutubeDL({'quiet': True, 'extract_flat': True}) as ytdl_title:
+                    yt_info = await safe_extract_info(ytdl_title, search)
+                    if yt_info and 'title' in yt_info:
+                        query = f"scsearch:{yt_info['title']}"
+            except Exception as e:
+                print(f"Fallback title extraction error: {e}")
 
     with yt_dlp.YoutubeDL(YTDL_OPTIONS) as ytdl:
         try:
@@ -236,7 +245,7 @@ async def play(ctx, *, search):
             
             if 'entries' in info:
                 if info['entries']:
-                    target = info['entries'][0] # ចាប់យកបទដំបូងគេបង្អស់
+                    target = info['entries'][0] # ចាប់យកបទដំបូងគេបង្អស់ពី SoundCloud
                 else:
                     raise Exception("No entries found")
             else:
@@ -251,7 +260,7 @@ async def play(ctx, *, search):
             print(f"Search Error: {e}")
             try: await process_msg.delete()
             except: pass
-            embed = discord.Embed(description="❌ Could not find or play this track/link. YouTube might be blocking the request.", color=0xff0000)
+            embed = discord.Embed(description="❌ Could not find or play this track/link.", color=0xff0000)
             return await ctx.send(embed=embed)
         
     if ctx.guild.id not in song_queue:
