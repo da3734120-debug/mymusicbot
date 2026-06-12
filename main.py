@@ -70,10 +70,9 @@ async def play_audio_async(ctx, song_data):
         
         # 💡 សម្រាប់រត់លើកុំព្យូទ័រ (Windows) ត្រូវប្រាកដថាបងមាន Folder "bin/ffmpeg/ffmpeg.exe"
         source = await discord.FFmpegOpusAudio.from_probe(
-            song_data['url'], 
-            executable="bin/ffmpeg/ffmpeg.exe", 
-            **FFMPEG_OPTIONS
-        )
+    song_data['url'], 
+    **FFMPEG_OPTIONS
+)
         
         ctx.voice_client.play(source, after=lambda e: check_queue(ctx))
         
