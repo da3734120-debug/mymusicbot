@@ -156,10 +156,9 @@ async def fetch_and_play_autoplay(ctx):
                         continue
                     is_already_played = False
                     for played_title in played_history[ctx.guild.id]:
-                        if played_title.
-                        lower() in title_lower or title_lower in played_title.lower():
-                            is_already_played = True
-                            break
+    if played_title.lower() in title_lower or title_lower in played_title.lower(): # ✅ កែឱ្យពេញបែបនេះ
+        is_already_played = True
+        break
                     if not is_already_played:
                         valid_entries.append(entry)
                 
