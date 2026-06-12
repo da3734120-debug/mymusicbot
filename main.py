@@ -72,11 +72,11 @@ async def play_audio_async(ctx, song_data):
 
         last_played_title[ctx.guild.id] = song_data['title']
         
-        # ✅ កូដថ្មីដែលត្រឹមត្រូវ និងទម្លុះការគាំង៖
-source = await discord.FFmpegOpusAudio.from_probe(
-    song_data['url'], 
-    **FFMPEG_OPTIONS
-)
+        # 💡 កូដកែសម្រួលត្រឹមត្រូវ៖ គ្មាន executable គ្មានវង់ក្រចកលើស និងមាន block except ត្រឹមត្រូវ
+        source = await discord.FFmpegOpusAudio.from_probe(
+            song_data['url'], 
+            **FFMPEG_OPTIONS
+        )
         
         ctx.voice_client.play(source, after=lambda e: check_queue(ctx))
         
