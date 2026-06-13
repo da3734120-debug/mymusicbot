@@ -63,7 +63,8 @@ async def play(ctx, *, search: str):
     if not tracks:
         return await ctx.send("❌ រកមិនឃើញបទចម្រៀង ឬលីង YouTube នេះទេ!")
         
-    track = tracks[0] if isinstance(tracks, list) else tracks
+    # ✅ ចាប់យកបទទី ១ ចេញពីលីង YouTube ដែលរកឃើញមកចាក់ភ្លាម
+    track = tracks[0] 
     await player.play(track)
     
     embed = discord.Embed(
