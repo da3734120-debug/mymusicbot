@@ -30,9 +30,8 @@ bot = commands.Bot(command_prefix="T!", intents=intents)
 async def connect_nodes():
     await bot.wait_until_ready()
     
-    # ប្រើប្រាស់ Node សាធារណៈស្តង់ដារឆ្នាំ ២០២៦ ដែលមានប្រព័ន្ធទម្លុះការប្លុក YouTube រួចជាស្រេច
     node = wavelink.Node(
-        uri="http://lavaclient.com", # ម៉ាស៊ីនទាញសម្លេងយូធូបហ្វ្រី
+        uri="http://lava.link:80", # 🟢 ដូរមកប្រើអាសយដ្ឋានថ្មីនេះ
         password="youshallnotpass"
     )
     await wavelink.Pool.connect(nodes=[node], client=bot)
