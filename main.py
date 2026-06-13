@@ -31,7 +31,6 @@ bot = commands.Bot(command_prefix="T!", intents=intents)
 async def connect_nodes():
     await bot.wait_until_ready()
     
-    # ✅ ប្រព័ន្ធ Railway ប្តូរឈ្មោះពីដកឃ្លាមកជា "lavalink-2026" + ដាច់ខាតត្រូវថែម Port :2333
     node = wavelink.Node(
         uri="http://railway.internal",  
         password="youshallnotpass"
