@@ -31,7 +31,7 @@ async def connect_nodes():
     await bot.wait_until_ready()
     
     node = wavelink.Node(
-        uri="http://127.0.0.1:2333", # 🟢 បញ្ជាឱ្យភ្ជាប់មកម៉ាស៊ីនខ្លួនឯងផ្ទាល់
+        uri="http://127.0.0.1:8080", # 🟢 ដូរមកកាន់ Port 8080 របស់ម៉ាស៊ីនថ្មី
         password="youshallnotpass"
     )
     await wavelink.Pool.connect(nodes=[node], client=bot)
