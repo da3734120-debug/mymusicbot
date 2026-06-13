@@ -7,8 +7,8 @@ from flask import Flask
 from threading import Thread
 
 # === បន្ថែមការហៅដំឡើងផ្លូវ FFmpeg ដោយប្រើ static-ffmpeg ឱ្យត្រូវតាម Render ===
-from static_ffmpeg import run
-ffmpeg_path, ffprobe_path = run.get_or_fetch_platform_executables_high_level()
+import static_ffmpeg
+ffmpeg_path = static_ffmpeg.get_ffmpeg_exe()
 
 # ==================== ១. WEB SERVER សម្រាប់ KEEP ALIVE ២៤/៧ ====================
 app = Flask('')
