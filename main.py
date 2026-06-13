@@ -6,11 +6,11 @@ import asyncio
 from flask import Flask
 from threading import Thread
 
-# === បន្ថែមការហៅដំឡើងផ្លូវ FFmpeg ដោយប្រើ static-ffmpeg ឱ្យត្រូវតាម Render ===
+# === ប្តូរមកប្រើប្រាស់ពាក្យបញ្ជាដែលត្រឹមត្រូវរបស់ static-ffmpeg ===
 import static_ffmpeg
 ffmpeg_path = static_ffmpeg.get_ffmpeg_exe()
 
-# ==================== ១. WEB SERVER សម្រាប់ KEEP ALIVE ២៤/៧ ====================
+# ==================== ១. WEB SERVER សម្រាប់ KEEP ALIVE ២ POUR ២៤/៧ ====================
 app = Flask('')
 
 @app.route('/')
@@ -48,7 +48,6 @@ YTDL_OPTIONS = {
     'source_address': '0.0.0.0'
 }
 
-# ភ្ជាប់ផ្លូវទៅកាន់ executable របស់ static-ffmpeg ផ្ទាល់
 FFMPEG_OPTIONS = {
     'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 
     'options': '-vn'
@@ -75,7 +74,6 @@ async def play(ctx, *, search: str):
 
     with yt_dlp.YoutubeDL(YTDL_OPTIONS) as ytdl:
         try:
-            # បន្ថែមកូដត្រួតពិនិត្យឱ្យស្គាល់ទាំង Link ផ្ទាល់ និងឈ្មោះបទចម្រៀង
             if search.startswith("http"):
                 info = ytdl.extract_info(search, download=False)
             else:
@@ -89,7 +87,7 @@ async def play(ctx, *, search: str):
     if vc.is_playing():
         vc.stop()
 
-    # កែប្រែត្រង់ចំណុចចាក់នេះ ដោយបញ្ជាក់ប្រាប់ប្រព័ន្ធឱ្យប្រើផ្លូវរបស់ static-ffmpeg
+    # ហៅប្រើប្រាស់ផ្លូវ ffmpeg_path ដែលបានកែខាងលើ
     source = await discord.FFmpegOpusAudio.from_probe(url, executable=ffmpeg_path, **FFMPEG_OPTIONS)
     vc.play(source)
     
