@@ -7,6 +7,10 @@ import shutil
 from flask import Flask
 from threading import Thread
 
+# === បន្ថែមកូដ ២ ជួរនេះ ដើម្បីជួសជុលបញ្ហា Error Opus Voice ===
+import opus_bin
+discord.opus.load_opus(opus_bin.libopus_path)
+
 # ==================== ១. WEB SERVER សម្រាប់ KEEP ALIVE ២៤/៧ ====================
 app = Flask('')
 
@@ -84,7 +88,6 @@ async def play(ctx, *, search: str):
     if vc.is_playing():
         vc.stop()
 
-    # ប្រព័ន្ធនឹងហៅរកកម្មវិធីចាក់ភ្លេងដែលមានស្រាប់នៅក្នុងម៉ាស៊ីនរបស់ Render ដោយស្វ័យប្រវត្តិតែម្តង
     source = await discord.FFmpegOpusAudio.from_probe(url, **FFMPEG_OPTIONS)
     vc.play(source)
     
@@ -108,7 +111,7 @@ async def stop(ctx):
         await ctx.voice_client.disconnect()
         await ctx.send("👋 បានបិទ និងចាកចេញពី Voice Channel រួចរាល់។")
     else:
-        await ctx.send("❌ Bot មិនទាន់បានចូល Voice Channel ឡើយ။")
+        await ctx.send("❌ Bot មិនទាន់បានចូល Voice Channel ឡើយ។")
 
 # ==================== ៤. ដំណើរការ APPLICATION ====================
 keep_alive()
