@@ -31,9 +31,9 @@ bot = commands.Bot(command_prefix="T!", intents=intents)
 async def connect_nodes():
     await bot.wait_until_ready()
     
-    # ✅ ភ្ជាប់ទៅកាន់ម៉ាស៊ីន Lavalink ផ្ទាល់ខ្លួនក្នុង Railway ដោយប្រើប្រព័ន្ធ Private Networking
+    # ✅ ប្រើប្រាស់ Node ថ្មីឆ្នាំ 2026 ដែលកំពុងដំណើរការល្អ
     node = wavelink.Node(
-        uri="http://railway.internal",  # ឈ្មោះ Private Domain របស់ Railway
+        uri="http://jirayu.net",  
         password="youshallnotpass"
     )
     await wavelink.Pool.connect(nodes=[node], client=bot)
