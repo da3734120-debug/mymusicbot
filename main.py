@@ -31,9 +31,10 @@ bot = commands.Bot(command_prefix="T!", intents=intents)
 async def connect_nodes():
     await bot.wait_until_ready()
     
+    # ប្រើប្រាស់ម៉ាស៊ីន Horizxon Node 1 (Singapore) ដែលមាន Ping ទាបបំផុត
     node = wavelink.Node(
-        uri="http://lava.link:80",  # លីងបម្រុង
-        password="youshallnotpass"
+        uri="http://horizxon.studio",  
+        password="horizxon.studio"
     )
     await wavelink.Pool.connect(nodes=[node], client=bot)
 
