@@ -7,10 +7,6 @@ import shutil
 from flask import Flask
 from threading import Thread
 
-# === បន្ថែមកូដ ២ ជួរនេះ ដើម្បីជួសជុលបញ្ហា Error Opus Voice ===
-import opus_bin
-discord.opus.load_opus(opus_bin.libopus_path)
-
 # ==================== ១. WEB SERVER សម្រាប់ KEEP ALIVE ២៤/៧ ====================
 app = Flask('')
 
