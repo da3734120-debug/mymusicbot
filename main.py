@@ -31,9 +31,9 @@ bot = commands.Bot(command_prefix="T!", intents=intents)
 async def connect_nodes():
     await bot.wait_until_ready()
     
-    # 使用 Public Node ដែលមានស្ថេរភាពខ្ពស់ និង Online ជានិច្ច
+    # ប្តូរមកប្រើ Node ថ្មីដែលមានស្ថេរភាពជាង និងមិនសូវគាំង
     node = wavelink.Node(
-        uri="http://proxy.lol",  
+        uri="http://icandycodes.com",  # លីងម៉ាស៊ីនថ្មី
         password="youshallnotpass"
     )
     await wavelink.Pool.connect(nodes=[node], client=bot)
