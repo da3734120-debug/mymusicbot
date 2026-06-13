@@ -2,4 +2,4 @@ discord.py
 yt-dlp
 Flask
 PyNaCl
-opus-bin
+
