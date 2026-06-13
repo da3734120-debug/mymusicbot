@@ -1,9 +1,16 @@
+# === បញ្ចូលប្រព័ន្ធជួសជុលបញ្ហា Error Opus Voice នៅលើ Host Render មុនគេបង្អស់ ===
+try:
+    import pip_opus_loader
+    pip_opus_loader.load_opus()
+    print("🟢 Loaded Opus Library successfully via pip-opus-loader!")
+except Exception as e:
+    print(f"⚠️ Warning loading Opus: {e}")
+
 import discord
 from discord.ext import commands
 import yt_dlp
 import os
 import asyncio
-import shutil
 from flask import Flask
 from threading import Thread
 
@@ -58,7 +65,7 @@ async def on_ready():
 @bot.command(name="p")
 async def play(ctx, *, search: str):
     if not ctx.author.voice:
-        return await ctx.send("❌ អ្នកត្រូវតែចូលក្នុង Voice Channel សិន!")
+        return await ctx.send("❌ អ្នកត្រូវតែចូលក្នុង Voice Channel S sិន!")
         
     destination = ctx.author.voice.channel
     
@@ -79,19 +86,22 @@ async def play(ctx, *, search: str):
             url = info['url']
             title = info['title']
         except Exception as e:
-            return await ctx.send("❌ មិនអាចទាញយកបទចម្រៀងនេះបានទេ (YouTube Block IP របស់ Host)។")
+            return await ctx.send(f"❌ មិនអាចទាញយកបទចម្រៀងនេះបានទេ៖ {e}")
 
     if vc.is_playing():
         vc.stop()
 
-    source = await discord.FFmpegOpusAudio.from_probe(url, **FFMPEG_OPTIONS)
-    vc.play(source)
-    
-    embed = discord.Embed(
-        description=f"🟢 កំពុងចាក់បទ៖ **{title}**", 
-        color=0x1ed760
-    )
-    await ctx.send(embed=embed)
+    try:
+        source = await discord.FFmpegOpusAudio.from_probe(url, **FFMPEG_OPTIONS)
+        vc.play(source)
+        
+        embed = discord.Embed(
+            description=f"🟢 កំពុងចាក់បទ៖ **{title}**", 
+            color=0x1ed760
+        )
+        await ctx.send(embed=embed)
+    except Exception as e:
+        await ctx.send(f"❌ កំហុសពេលចាក់ភ្លេង (FFmpeg Error)៖ {e}")
 
 @bot.command()
 async def skip(ctx):
@@ -107,7 +117,7 @@ async def stop(ctx):
         await ctx.voice_client.disconnect()
         await ctx.send("👋 បានបិទ និងចាកចេញពី Voice Channel រួចរាល់។")
     else:
-        await ctx.send("❌ Bot មិនទាន់បានចូល Voice Channel ឡើយ។")
+        await ctx.send("❌ Bot មិនទាន់បានចូល Voice Channel ឡើយ।")
 
 # ==================== ៤. ដំណើរការ APPLICATION ====================
 keep_alive()
