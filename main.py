@@ -6,11 +6,11 @@ import asyncio
 from flask import Flask
 from threading import Thread
 
-# === ប្តូរមកប្រើប្រាស់ពាក្យបញ្ជាដែលត្រឹមត្រូវរបស់ static-ffmpeg ===
-import static_ffmpeg
-ffmpeg_path = static_ffmpeg.get_ffmpeg_exe()
+# === ប្តូរមកប្រើប្រាស់ប្រព័ន្ធស្វែងរកផ្លូវ FFmpeg របស់ ffdl វិញ ===
+from ffdl import ffdl
+ffmpeg_path = ffdl.get_ffmpeg_path()
 
-# ==================== ១. WEB SERVER សម្រាប់ KEEP ALIVE ២ POUR ២៤/៧ ====================
+# ==================== ១. WEB SERVER សម្រាប់ KEEP ALIVE ២៤/៧ ====================
 app = Flask('')
 
 @app.route('/')
@@ -87,7 +87,7 @@ async def play(ctx, *, search: str):
     if vc.is_playing():
         vc.stop()
 
-    # ហៅប្រើប្រាស់ផ្លូវ ffmpeg_path ដែលបានកែខាងលើ
+    # ហៅប្រើប្រាស់ប្រព័ន្ធចាក់ភ្លេងជាមួយផ្លូវ FFmpeg ថ្មី
     source = await discord.FFmpegOpusAudio.from_probe(url, executable=ffmpeg_path, **FFMPEG_OPTIONS)
     vc.play(source)
     
