@@ -1,0 +1,15 @@
+server:
+  port: 2333
+  address: 0.0.0.0
+lavalink:
+  plugins:
+    - dependency: "dev.arbjerg.lavalink.plugin:youtube:1.7.2"
+  server:
+    password: "youshallnotpass"
+    sources:
+      youtube: true
+      soundcloud: true
+    bufferDurationMs: 400
+    youtube:
+      oauth:
+        enabled: true
