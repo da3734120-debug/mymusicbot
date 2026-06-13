@@ -1,10 +1,3 @@
-# === បញ្ចូលប្រព័ន្ធជួសជុលបញ្ហា Error Opus Voice នៅលើ Host Render មុនគេបង្អស់ ===
-try:
-    import pip_opus_loader
-    pip_opus_loader.load_opus()
-    print("🟢 Loaded Opus Library successfully via pip-opus-loader!")
-except Exception as e:
-    print(f"⚠️ Warning loading Opus: {e}")
 
 import discord
 from discord.ext import commands
