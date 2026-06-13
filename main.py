@@ -42,7 +42,6 @@ async def on_ready():
     print(f"=== {bot.user.name} (Lavalink Edition) ONLINE ===")
     bot.loop.create_task(connect_nodes())
 
-@bot.event
 async def on_wavelink_node_ready(payload: wavelink.NodeReadyEvent):
     print(f"✅ Lavalink Node {payload.node.identifier} ភ្ជាប់ជោគជ័យ និងត្រៀមខ្លួនចាក់ YouTube!")
     # ==================== ៤. DISCORD MUSIC COMMANDS (ចាក់លីង YOUTUBE) ====================
