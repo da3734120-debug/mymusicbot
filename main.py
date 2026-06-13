@@ -31,9 +31,8 @@ bot = commands.Bot(command_prefix="T!", intents=intents)
 async def connect_nodes():
     await bot.wait_until_ready()
     
-    # ប្តូរមកប្រើ Node ថ្មីដែលមានស្ថេរភាពជាង និងមិនសូវគាំង
     node = wavelink.Node(
-        uri="http://icandycodes.com",  # លីងម៉ាស៊ីនថ្មី
+        uri="http://lava.link:80",  # លីងបម្រុង
         password="youshallnotpass"
     )
     await wavelink.Pool.connect(nodes=[node], client=bot)
