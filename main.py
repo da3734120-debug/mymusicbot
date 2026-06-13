@@ -14,6 +14,7 @@ def home():
     return "TwT Music Bot is Online 24/7 WITHOUT LAVALINK!"
 
 def run_web():
+    # Render តម្រូវឱ្យប្រើ Port ដែលប្រព័ន្ធផ្តល់ឱ្យតាម os.getenv
     port = int(os.getenv('PORT', 8080))
     app.run(host='0.0.0.0', port=port)
 
@@ -28,7 +29,6 @@ intents.voice_states = True
 
 bot = commands.Bot(command_prefix="T!", intents=intents)
 
-# ការកំណត់សម្រាប់ទាញយកសំឡេងពី YouTube (ទម្រង់ថ្មីឆ្នាំ ២០២៦)
 YTDL_OPTIONS = {
     'format': 'bestaudio/best',
     'noplaylist': 'True',
@@ -54,7 +54,7 @@ FFMPEG_OPTIONS = {
 async def on_ready():
     print(f"=== {bot.user.name} (Direct YT Edition) ONLINE ===")
 
-# ==================== ៣. DISCORD MUSIC COMMANDS (ចាក់ផ្ទាល់មិនឆ្លង Node) ====================
+# ==================== ៣. DISCORD MUSIC COMMANDS ====================
 @bot.command(name="p")
 async def play(ctx, *, search: str):
     if not ctx.author.voice:
@@ -62,7 +62,6 @@ async def play(ctx, *, search: str):
         
     destination = ctx.author.voice.channel
     
-    # ឱ្យ Bot ចូលក្នុង Voice Room ភ្លាមៗនៅពេលវាយបញ្ជា
     if not ctx.voice_client:
         vc = await destination.connect()
     else:
@@ -70,7 +69,6 @@ async def play(ctx, *, search: str):
 
     await ctx.send(f"🔍 កំពុងស្វែងរកបទចម្រៀង៖ {search}...")
 
-    # ទាញយក Link សំឡេងដោយប្រើ yt-dlp
     with yt_dlp.YoutubeDL(YTDL_OPTIONS) as ytdl:
         try:
             info = ytdl.extract_info(f"ytsearch:{search}", download=False)['entries'][0]
@@ -79,11 +77,9 @@ async def play(ctx, *, search: str):
         except Exception as e:
             return await ctx.send("❌ មិនអាចទាញយកបទចម្រៀងនេះបានទេ (YouTube Block IP របស់ Host)។")
 
-    # បញ្ឈប់ភ្លេងចាស់ បើមានកំពុងលេង
     if vc.is_playing():
         vc.stop()
 
-    # ដំណើរការចាក់ភ្លេងចូលក្នុង Room ដោយប្រើ FFmpeg 
     source = await discord.FFmpegOpusAudio.from_probe(url, **FFMPEG_OPTIONS)
     vc.play(source)
     
@@ -112,8 +108,9 @@ async def stop(ctx):
 # ==================== ៤. ដំណើរការ APPLICATION ====================
 keep_alive()
 
+# ហៅទាញយក Token ពីប្រព័ន្ធសន្តិសុខរបស់ Render
 TOKEN = os.getenv('DISCORD_TOKEN')
 if TOKEN:
     bot.run(TOKEN)
 else:
-    print("⚠️ Error: DISCORD_TOKEN variable is missing in Railway Variables!")
+    print("⚠️ Error: DISCORD_TOKEN variable is missing in Render Environment!")
