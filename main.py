@@ -1,21 +1,16 @@
 import discord
 from discord.ext import commands
-import yt_dlp
-import asyncio
-import random
-import logging
+import wavelink
 import os
 from flask import Flask
 from threading import Thread
 
-logging.basicConfig(level=logging.INFO)
-
-# ==================== ១. បង្កើត WEB SERVER កុំឱ្យ RAILWAY បិទ BOT ====================
+# ==================== ១. បង្កើត WEB SERVER សម្រាប់ KEEP ALIVE ២៤/៧ ====================
 app = Flask('')
 
 @app.route('/')
 def home():
-    return "TwT Music Bot is running 24/7!"
+    return "TwT Music Lavalink Bot is Online 24/7!"
 
 def run_web():
     port = int(os.getenv('PORT', 8080))
@@ -28,295 +23,78 @@ def keep_alive():
 # ==================== ២. SETUP INTENTS និង BOT ====================
 intents = discord.Intents.default()
 intents.message_content = True
-intents.presences = True
-intents.members = True
+intents.voice_states = True # ដាច់ខាតត្រូវតែបើក ដើម្បីឱ្យ Lavalink ស្គាល់សម្លេង
 
 bot = commands.Bot(command_prefix="T!", intents=intents)
-bot.remove_command('help')
-
-YTDL_OPTIONS = {
-    'format': 'bestaudio/best',
-    'noplaylist': True,
-    'quiet': True,
-    'extract_flat': False,
-    'skip_download': True,
-    'force_generic_extractor': False,
-    'ignoreerrors': True,
-    'nocheckcertificate': True,
-    'geo_bypass': True,
-    'extractor_args': {'youtube': {'player_client': ['android', 'web']}}
-}
-
-FFMPEG_OPTIONS = {
-    'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
-    'options': '-vn'
-}
-
-song_queue = {}
-last_played_title = {} 
-autoplay_status = {} 
-room_music_style = {} 
-played_history = {}
-# ==================== ៣. FUNCTIONS គ្រប់គ្រងការចាក់ចម្រៀង ====================
-def check_queue(ctx):
-    asyncio.run_coroutine_threadsafe(check_queue_async(ctx), bot.loop)
-
-async def check_queue_async(ctx):
-    if ctx.guild.id in song_queue and song_queue[ctx.guild.id]:
-        next_song = song_queue[ctx.guild.id].pop(0)
-        await play_audio_async(ctx, next_song)
-    else:
-        if autoplay_status.get(ctx.guild.id, False):
-            await fetch_and_play_autoplay(ctx)
-        else:
-            embed = discord.Embed(
-                description="👋 Queue is empty. Autoplay is OFF.\nUse T!autoplay to enable infinite music!", 
-                color=0x2b2d31
-            )
-            await ctx.send(embed=embed)
-
-def play_audio(ctx, song_data):
-    asyncio.run_coroutine_threadsafe(play_audio_async(ctx, song_data), bot.loop)
-
-async def play_audio_async(ctx, song_data):
-    try:
-        if not ctx.voice_client or not ctx.voice_client.is_connected():
-            return
-
-        last_played_title[ctx.guild.id] = song_data['title']
-        
-        source = await discord.FFmpegOpusAudio.from_probe(
-            song_data['url'], 
-            **FFMPEG_OPTIONS
-        )
-        
-        ctx.voice_client.play(source, after=lambda e: check_queue(ctx))
-        
-        embed = discord.Embed(
-            description=f"🟢 Started playing: [{song_data['title']}]({song_data['url']})", 
-            color=0x1ed760
-        )
-        if bot.user.avatar:
-            embed.set_footer(text="TwT Music | Streaming Audio Source", icon_url=bot.user.avatar.url)
-        else:
-            embed.set_footer(text="TwT Music | Streaming Audio Source")
-            
-        await ctx.send(embed=embed)
-    except Exception as e:
-        print(f"⚠️ Play Audio Error Detail: {e}")
-        embed = discord.Embed(
-            description=f"⚠️ Unplayable track detected: {song_data.get('title', 'Unknown')}\nSkipping to next song...", 
-            color=0xe67e22
-        )
-        await ctx.send(embed=embed)
-        check_queue(ctx)
-
-async def safe_extract_info(ytdl, query):
-    return await bot.loop.run_in_executor(None, lambda: ytdl.extract_info(query, download=False))
-
-# ==================== ៤. មុខងារ AUTOPLAY (ស្វែងរកចម្រៀងខ្មែរ) ====================
-async def fetch_and_play_autoplay(ctx):
-    current_title = last_played_title.get(ctx.guild.id, "")
-    is_remix = "remix" in current_title.lower() or "ញាក់" in current_title.lower()
+# ==================== ៣. ប្រព័ន្ធតភ្ជាប់ទៅកាន់ម៉ាស៊ីនចាក់ YOUTUBE (LAVALINK) ====================
+async def connect_nodes():
+    await bot.wait_until_ready()
     
-    sweet_keywords = [
-        "khmer original song suly pheng", "khmer sad song tempo tris",
-        "khmer song vfx sad", "khmer sweet song lean",
-        "khmer original lyric song", "khmer sad song ruthko"
-    ]
-    
-    remix_keywords = [
-        "khmer remix vando", "khmer remix 2026",
-        "khmer breakmix vannda", "khmer remix fly"
-    ]
+    # ប្រើប្រាស់ Node សាធារណៈស្តង់ដារឆ្នាំ ២០២៦ ដែលមានប្រព័ន្ធទម្លុះការប្លុក YouTube រួចជាស្រេច
+    node = wavelink.Node(
+        uri="http://lavaclient.com", # ម៉ាស៊ីនទាញសម្លេងយូធូបហ្វ្រី
+        password="youshallnotpass"
+    )
+    await wavelink.Pool.connect(nodes=[node], client=bot)
 
-    fallback_keyword = random.choice(remix_keywords) if is_remix else random.choice(sweet_keywords)
-
-    if ctx.guild.id not in played_history:
-        played_history[ctx.guild.id] = []
-
-    if current_title and current_title not in played_history[ctx.guild.id]:
-        played_history[ctx.guild.id].append(current_title)
-
-    if len(played_history[ctx.guild.id]) > 50:
-        played_history[ctx.guild.id].pop(0)
-
-    embed = discord.Embed(description="⏭️ Autoplay: Fetching a fresh track...", color=0x2b2d31)
-    await ctx.send(embed=embed)
-
-    with yt_dlp.YoutubeDL(YTDL_OPTIONS) as ytdl:
-        try:
-            info = await safe_extract_info(ytdl, f"scsearch30:{fallback_keyword}")
-            if info and 'entries' in info and info['entries']:
-                valid_entries = []
-                for entry in info['entries']:
-                    if not entry or 'url' not in entry:
-                        continue
-                    title_lower = entry['title'].lower()
-                    if not is_remix and ("remix" in title_lower or "breakmix" in title_lower or "club" in title_lower):
-                        continue
-                    is_already_played = False
-                    for played_title in played_history[ctx.guild.id]:
-                        if played_title.lower() in title_lower or title_lower in played_title.lower():
-                            is_already_played = True
-                            break
-                    if not is_already_played:
-                        valid_entries.append(entry)
-                
-                if valid_entries:
-                    next_song = random.choice(valid_entries)
-                else:
-                    filtered_entries = [e for e in info['entries'] if e]
-                    if filtered_entries:
-                        next_song = random.choice(filtered_entries)
-                    else:
-                        next_song = None
-
-                if next_song:
-                    song_data = {'url': next_song['url'], 'title': next_song['title']}
-                    await play_audio_async(ctx, song_data)
-                else:
-                    check_queue(ctx)
-            else:
-                check_queue(ctx)
-        except Exception as e:
-            print(f"Autoplay Search Error: {e}")
-            check_queue(ctx)
-            # ==================== ៥. DISCORD MUSIC BOT COMMANDS ====================
 @bot.event
 async def on_ready():
-    print(f'=== TwT Music ONLINE ===')
+    print(f"=== {bot.user.name} (Lavalink Edition) ONLINE ===")
+    bot.loop.create_task(connect_nodes())
 
-@bot.command(name="help")
-async def help_command(ctx):
+@bot.event
+async def on_wavelink_node_ready(payload: wavelink.NodeReadyEvent):
+    print(f"✅ Lavalink Node {payload.node.identifier} ភ្ជាប់ជោគជ័យ និងត្រៀមខ្លួនចាក់ YouTube!")
+    # ==================== ៤. DISCORD MUSIC COMMANDS (ចាក់លីង YOUTUBE) ====================
+@bot.command(name="p")
+async def play(ctx, *, search: str):
+    if not ctx.author.voice:
+        return await ctx.send("❌ អ្នកត្រូវតែចូលក្នុង Voice Channel សិន!")
+        
+    destination = ctx.author.voice.channel
+    
+    # ភ្ជាប់ Bot ចូល Voice Channel
+    if not ctx.voice_client:
+        player: wavelink.Player = await destination.connect(cls=wavelink.Player)
+    else:
+        player: wavelink.Player = ctx.voice_client
+        
+    # បញ្ជាឱ្យ Lavalink ទៅអូសទាញយកបទចម្រៀងពីលីង YouTube មកភ្លាមៗ
+    tracks: wavelink.Search = await wavelink.Playable.search(search)
+    if not tracks:
+        return await ctx.send("❌ រកមិនឃើញបទចម្រៀង ឬលីង YouTube នេះទេ!")
+        
+    track = tracks[0] if isinstance(tracks, list) else tracks
+    await player.play(track)
+    
     embed = discord.Embed(
-        title="🎵 TwT Music - Command Guide",
-        description="Here is a list of available commands to control the music bot:",
+        description=f"🟢 កំពុងចាក់បទពី YouTube: **[{track.title}]({track.uri})**", 
         color=0x1ed760
     )
-    embed.add_field(
-        name="🎤 Music Commands",
-        value="• T!p [song name/link] — Play music from YouTube Link or Search by Name\n"
-              "• T!autoplay — Toggle infinite automatic playback\n"
-              "• T!skip — Skip the currently playing track",
-        inline=False
-    )
-    embed.add_field(
-        name="🚪 Management Commands",
-        value="• T!stop — Stop playback, clear the queue, and leave the voice channel",
-        inline=False
-    )
-    if bot.user.avatar:
-        embed.set_thumbnail(url=bot.user.avatar.url)
-        embed.set_footer(text="TwT Music Bot • 2026 Edition", icon_url=bot.user.avatar.url)
-    else:
-        embed.set_footer(text="TwT Music Bot • 2026 Edition")
     await ctx.send(embed=embed)
-
-@bot.command()
-async def autoplay(ctx):
-    if ctx.guild.id not in autoplay_status:
-        autoplay_status[ctx.guild.id] = False
-    autoplay_status[ctx.guild.id] = not autoplay_status[ctx.guild.id]
-    embed = discord.Embed(
-        description=f"{'🔄' if autoplay_status[ctx.guild.id] else '🛑'} **Autoplay has been turned {'ON' if autoplay_status[ctx.guild.id] else 'OFF'}!", 
-        color=0x1ed760 if autoplay_status[ctx.guild.id] else 0xff0000
-    )
-    await ctx.send(embed=embed)
-
-@bot.command(name="p")
-async def play(ctx, *, search):
-    if not ctx.author.voice:
-        embed = discord.Embed(description="❌ You need to join a voice channel first!", color=0xff0000)
-        return await ctx.send(embed=embed)
-    if ctx.voice_client is None:
-        await ctx.author.voice.channel.connect(self_deaf=True)
-    
-    process_msg = await ctx.send(embed=discord.Embed(description=f"🔍 Processing {search}... please wait.", color=0x2b2d31))
-
-    query = f"scsearch:{search}"
-    
-    # ✅ ជួសជុលការដកស្រង់ចំណងជើងពីលីង YouTube ឱ្យដើរត្រឹមត្រូវ ១០០% ដោយគ្មានការទាក់ទើ
-    if search.startswith("http://") or search.startswith("https://"):
-        if "youtube.com" in search or "youtu.be" in search:
-            try:
-                with yt_dlp.YoutubeDL({'quiet': True}) as ytdl_title:
-                    yt_info = await safe_extract_info(ytdl_title, search)
-                    if yt_info and 'title' in yt_info:
-                        query = f"scsearch:{yt_info['title']}"
-            except Exception as e:
-                print(f"Title extraction error: {e}")
-
-    with yt_dlp.YoutubeDL(YTDL_OPTIONS) as ytdl:
-        try:
-            info = await safe_extract_info(ytdl, query)
-            if not info:
-                raise Exception("No info found")
-            
-            # ✅ ជួសជុលចំណុចទាញយកទិន្នន័យដើម្បីទប់ស្កាត់សារកំហុស "Could not find track" របស់អ្នក
-            if 'entries' in info and info['entries']:
-                target = info['entries'][0]
-            else:
-                target = info
-                
-            song_data = {'url': target['url'], 'title': target['title']}
-            
-            try: await process_msg.delete()
-            except: pass
-
-        except Exception as e:
-            print(f"Search Error: {e}")
-            try: await process_msg.delete()
-            except: pass
-            embed = discord.Embed(description="❌ Could not find or play this track/link.", color=0xff0000)
-            return await ctx.send(embed=embed)
-        
-    if ctx.guild.id not in song_queue:
-        song_queue[ctx.guild.id] = []
-        
-    if ctx.voice_client.is_playing() or ctx.voice_client.is_paused():
-        song_queue[ctx.guild.id].append(song_data)
-        embed = discord.Embed(description=f"➕ Added to queue: **{song_data['title']}**", color=0x2b2d31)
-        await ctx.send(embed=embed)
-    else:
-        await play_audio_async(ctx, song_data)
 
 @bot.command()
 async def skip(ctx):
-    if ctx.voice_client and (ctx.voice_client.is_playing() or ctx.voice_client.is_paused()):
-        ctx.voice_client.stop()
-        await ctx.send(embed=discord.Embed(description="⏭️ Skipped successfully!", color=0x2b2d31))
+    if ctx.voice_client:
+        await ctx.voice_client.skip()
+        await ctx.send("⏭️ បានរំលងចម្រៀងចោលជោគជ័យ!")
     else:
-        await ctx.send(embed=discord.Embed(description="❌ No song is currently playing.", color=0xff0000))
+        await ctx.send("❌ គ្មានបទចម្រៀងកំពុងលេងទេ។")
 
 @bot.command()
 async def stop(ctx):
-    if ctx.guild.id in song_queue: 
-        song_queue[ctx.guild.id] = []
-        
-    if ctx.guild.id in last_played_title: 
-        del last_played_title[ctx.guild.id]
-        
-    if ctx.guild.id in room_music_style: 
-        del room_music_style[ctx.guild.id]
-        
-    if ctx.guild.id in played_history: 
-        del played_history[ctx.guild.id]
-        
-    autoplay_status[ctx.guild.id] = False
-    
     if ctx.voice_client:
         await ctx.voice_client.disconnect()
-        
-    await ctx.send(embed=discord.Embed(description="👋 Left the voice channel and cleared configurations.", color=0x2b2d31))
-
-# ==================== ៦. ដំណើរការ APPLICATION រួមគ្នាជាមួយ WEB PORT ====================
+        await ctx.send("👋 បានបិទ និងចាកចេញពី Voice Channel រួចរាល់។")
+    else:
+        await ctx.send("❌ Bot មិនទាន់បានចូល Voice Channel ឡើយ។")
+        # ==================== ៥. ដំណើរការ APPLICATION រួមគ្នាជាមួយ WEB PORT ====================
 keep_alive()
 
-# ប្រព័ន្ធនឹងទាញយក Token ពី Variables របស់ Railway ឱ្យត្រូវនឹងទម្រង់ចុងក្រោយរបស់អ្នក
+# ប្រព័ន្ធនឹងទាញយក Token ពី Variables របស់ Railway ឱ្យត្រូវនឹងទម្រង់របស់បង
 TOKEN = os.getenv('DISCORD_TOKEN')
 if TOKEN:
     bot.run(TOKEN)
 else:
-    print("⚠️ Error: DISCORD_TOKEN variable is missing in Railway!")
+    print("⚠️ Error: DISCORD_TOKEN variable is missing in Railway Variables!")
     
