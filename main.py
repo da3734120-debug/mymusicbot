@@ -6,6 +6,10 @@ import asyncio
 from flask import Flask
 from threading import Thread
 
+# === បន្ថែមការហៅដំឡើងផ្លូវ FFmpeg ដោយប្រើ static-ffmpeg ឱ្យត្រូវតាម Render ===
+from static_ffmpeg import run
+ffmpeg_path, ffprobe_path = run.get_or_fetch_platform_executables_high_level()
+
 # ==================== ១. WEB SERVER សម្រាប់ KEEP ALIVE ២៤/៧ ====================
 app = Flask('')
 
@@ -14,7 +18,6 @@ def home():
     return "TwT Music Bot is Online 24/7 WITHOUT LAVALINK!"
 
 def run_web():
-    # Render តម្រូវឱ្យប្រើ Port ដែលប្រព័ន្ធផ្តល់ឱ្យតាម os.getenv
     port = int(os.getenv('PORT', 8080))
     app.run(host='0.0.0.0', port=port)
 
@@ -45,6 +48,7 @@ YTDL_OPTIONS = {
     'source_address': '0.0.0.0'
 }
 
+# ភ្ជាប់ផ្លូវទៅកាន់ executable របស់ static-ffmpeg ផ្ទាល់
 FFMPEG_OPTIONS = {
     'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 
     'options': '-vn'
@@ -71,7 +75,12 @@ async def play(ctx, *, search: str):
 
     with yt_dlp.YoutubeDL(YTDL_OPTIONS) as ytdl:
         try:
-            info = ytdl.extract_info(f"ytsearch:{search}", download=False)['entries'][0]
+            # បន្ថែមកូដត្រួតពិនិត្យឱ្យស្គាល់ទាំង Link ផ្ទាល់ និងឈ្មោះបទចម្រៀង
+            if search.startswith("http"):
+                info = ytdl.extract_info(search, download=False)
+            else:
+                info = ytdl.extract_info(f"ytsearch:{search}", download=False)['entries'][0]
+            
             url = info['url']
             title = info['title']
         except Exception as e:
@@ -80,7 +89,8 @@ async def play(ctx, *, search: str):
     if vc.is_playing():
         vc.stop()
 
-    source = await discord.FFmpegOpusAudio.from_probe(url, **FFMPEG_OPTIONS)
+    # កែប្រែត្រង់ចំណុចចាក់នេះ ដោយបញ្ជាក់ប្រាប់ប្រព័ន្ធឱ្យប្រើផ្លូវរបស់ static-ffmpeg
+    source = await discord.FFmpegOpusAudio.from_probe(url, executable=ffmpeg_path, **FFMPEG_OPTIONS)
     vc.play(source)
     
     embed = discord.Embed(
@@ -108,9 +118,8 @@ async def stop(ctx):
 # ==================== ៤. ដំណើរការ APPLICATION ====================
 keep_alive()
 
-# ហៅទាញយក Token ពីប្រព័ន្ធសន្តិសុខរបស់ Render
 TOKEN = os.getenv('DISCORD_TOKEN')
 if TOKEN:
     bot.run(TOKEN)
 else:
-    print("⚠️ Error: DISCORD_TOKEN variable is missing in Render Environment!")
+    print("⚠️ Error: DISCORD_TOKEN variable is missing!")
