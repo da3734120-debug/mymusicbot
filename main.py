@@ -5,7 +5,7 @@ import os
 from flask import Flask
 from threading import Thread
 
-# ==================== ១. WEB SERVER សម្រាប់ KEEP ALIVE ២៤/៧ ====================
+# ==================== ១. WEB SERVER សម្រាប់ KEEP ALIVE ២ POUR ៤/៧ ====================
 app = Flask('')
 
 @app.route('/')
@@ -27,13 +27,13 @@ intents.voice_states = True
 
 bot = commands.Bot(command_prefix="T!", intents=intents)
 
-# ==================== ៣. ប្រព័ន្ធតភ្ជាប់ទៅកាន់ម៉ាស៊ីនចាក់ YOUTUBE ====================
+# ==================== ៣. ប្រព័ន្ធតភ្ជាប់ទៅកាន់ម៉ាស៊ីនចាក់ភ្លេង ====================
 async def connect_nodes():
     await bot.wait_until_ready()
     
-    # ✅ បានដូរទៅប្រើលីងដែនពិតប្រាកដរបស់បង និងភ្ជាប់ទៅ Port 80 ត្រឹមត្រូវតាមស្ដង់ដារ
+    # 使用 Public Node ដែលមានស្ថេរភាពខ្ពស់ និង Online ជានិច្ច
     node = wavelink.Node(
-        uri="http://railway.app", 
+        uri="http://proxy.lol",  
         password="youshallnotpass"
     )
     await wavelink.Pool.connect(nodes=[node], client=bot)
@@ -44,31 +44,38 @@ async def on_ready():
     bot.loop.create_task(connect_nodes())
 
 @bot.event
-async def on_wavelink_node_ready(payload):
-    print("✅ ម៉ាស៊ីន Lavalink Node ភ្ជាប់ជោគជ័យ និងត្រៀមខ្លួនចាក់ YouTube រួចរាល់ហើយ!")
+async def on_wavelink_node_ready(payload: wavelink.NodeReadyEventPayload):
+    print(f"✅ ម៉ាស៊ីន Lavalink Node [{payload.node.identifier}] ភ្ជាប់ជោគជ័យ និងត្រៀមខ្លួនរួចរាល់!")
 
-# ==================== ៤. DISCORD MUSIC COMMANDS (ចាក់លីង YOUTUBE) ====================
+# ==================== ៤. DISCORD MUSIC COMMANDS (FULL) ====================
 @bot.command(name="p")
 async def play(ctx, *, search: str):
+    # ១. ពិនិត្យមើលថាតើអ្នកប្រើប្រាស់នៅក្នុង Voice Room ឬអត់
     if not ctx.author.voice:
         return await ctx.send("❌ អ្នកត្រូវតែចូលក្នុង Voice Channel សិន!")
         
     destination = ctx.author.voice.channel
     
+    # ២. ស្វែងរកបទចម្រៀងតាមរយៈប្រព័ន្ធ 'ytsearch:' មុននឹងឱ្យ Bot ចូល Room
+    tracks = await wavelink.Playable.search(f"ytsearch:{search}")
+    if not tracks:
+        return await ctx.send("❌ រកមិនឃើញបទចម្រៀង ឬលីងនេះទេ!")
+        
+    # ៣. ចាប់យកបទចម្រៀងដំបូងគេបង្អស់ (First Track) ពីក្នុងប្រអប់លទ្ធផល
+    track = tracks[0] 
+    
+    # ៤. បញ្ជាឱ្យ Bot ចូលទៅក្នុង Voice Channel បើវាមិនទាន់ចូល
     if not ctx.voice_client:
         player: wavelink.Player = await destination.connect(cls=wavelink.Player)
     else:
         player: wavelink.Player = ctx.voice_client
         
-    tracks: wavelink.Search = await wavelink.Playable.search(search)
-    if not tracks:
-        return await ctx.send("❌ រកមិនឃើញបទចម្រៀង ឬលីង YouTube នេះទេ!")
-        
-    track = tracks
+    # ៥. ដំណើរការចាក់ភ្លេង
     await player.play(track)
     
+    # ៦. បង្ហាញផ្ទាំង Embed ស្អាតៗនៅក្នុង Chat 
     embed = discord.Embed(
-        description=f"🟢 កំពុងចាក់បទពី YouTube: **[{track.title}]({track.uri})**", 
+        description=f"🟢 កំពុងចាក់បទ៖ **[{track.title}]({track.uri})**", 
         color=0x1ed760
     )
     await ctx.send(embed=embed)
