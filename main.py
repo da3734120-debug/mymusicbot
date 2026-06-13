@@ -3,12 +3,9 @@ from discord.ext import commands
 import yt_dlp
 import os
 import asyncio
+import shutil
 from flask import Flask
 from threading import Thread
-
-# === ប្តូរមកប្រើប្រាស់ប្រព័ន្ធស្វែងរកផ្លូវ FFmpeg របស់ ffdl វិញ ===
-import os
-ffmpeg_path = "./bin/ffmpeg" if os.path.exists("./bin/ffmpeg") else "ffmpeg"
 
 # ==================== ១. WEB SERVER សម្រាប់ KEEP ALIVE ២៤/៧ ====================
 app = Flask('')
@@ -87,8 +84,8 @@ async def play(ctx, *, search: str):
     if vc.is_playing():
         vc.stop()
 
-    # ហៅប្រើប្រាស់ប្រព័ន្ធចាក់ភ្លេងជាមួយផ្លូវ FFmpeg ថ្មី
-    source = await discord.FFmpegOpusAudio.from_probe(url, executable=ffmpeg_path, **FFMPEG_OPTIONS)
+    # ប្រព័ន្ធនឹងហៅរកកម្មវិធីចាក់ភ្លេងដែលមានស្រាប់នៅក្នុងម៉ាស៊ីនរបស់ Render ដោយស្វ័យប្រវត្តិតែម្តង
+    source = await discord.FFmpegOpusAudio.from_probe(url, **FFMPEG_OPTIONS)
     vc.play(source)
     
     embed = discord.Embed(
@@ -111,7 +108,7 @@ async def stop(ctx):
         await ctx.voice_client.disconnect()
         await ctx.send("👋 បានបិទ និងចាកចេញពី Voice Channel រួចរាល់។")
     else:
-        await ctx.send("❌ Bot មិនទាន់បានចូល Voice Channel ឡើយ។")
+        await ctx.send("❌ Bot មិនទាន់បានចូល Voice Channel ឡើយ။")
 
 # ==================== ៤. ដំណើរការ APPLICATION ====================
 keep_alive()
