@@ -31,7 +31,7 @@ bot = commands.Bot(command_prefix="T!", intents=intents)
 async def connect_nodes():
     await bot.wait_until_ready()
     
-    # ✅ ប្រើប្រាស់ Node ថ្មីឆ្នាំ 2026 ដែលកំពុងដំណើរការល្អ
+    # ✅ ប្រើប្រាស់ម៉ាស៊ីនថ្មីដែលកំពុងអនឡាញពិតប្រាកដ និងមិនមានការទប់ស្កាត់ពី Railway
     node = wavelink.Node(
         uri="http://jirayu.net",  
         password="youshallnotpass"
