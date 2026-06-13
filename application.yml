@@ -1,15 +1,6 @@
-server:
-  port: 2333
-  address: 0.0.0.0
-lavalink:
-  plugins:
-    - dependency: "dev.arbjerg.lavalink.plugin:youtube:1.7.2"
-  server:
-    password: "youshallnotpass"
-    sources:
-      youtube: true
-      soundcloud: true
-    bufferDurationMs: 400
-    youtube:
-      oauth:
-        enabled: true
+services:
+  - type: web
+    name: Discord-MusicBot-4
+    runtime: python
+    buildCommand: pip install -r requirements.txt && apt-get update && apt-get install -y ffmpeg libopus-dev
+    startCommand: python main.py
