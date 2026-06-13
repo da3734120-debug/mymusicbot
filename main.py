@@ -31,9 +31,9 @@ bot = commands.Bot(command_prefix="T!", intents=intents)
 async def connect_nodes():
     await bot.wait_until_ready()
     
-    # ✅ ប្រើប្រាស់ម៉ាស៊ីនថ្មីដែលកំពុងអនឡាញពិតប្រាកដ និងមិនមានការទប់ស្កាត់ពី Railway
+    # ✅ ប្តូរមកប្រើម៉ាស៊ីន Lavalink v3 ផ្លូវការ ដើម្បីឱ្យត្រូវជាមួយជំនាន់កូដ Wavelink របស់អ្នក
     node = wavelink.Node(
-        uri="http://jirayu.net",  
+        uri="http://lava.link:80",  
         password="youshallnotpass"
     )
     await wavelink.Pool.connect(nodes=[node], client=bot)
