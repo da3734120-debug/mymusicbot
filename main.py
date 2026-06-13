@@ -7,8 +7,8 @@ from flask import Flask
 from threading import Thread
 
 # === ប្តូរមកប្រើប្រាស់ប្រព័ន្ធស្វែងរកផ្លូវ FFmpeg របស់ ffdl វិញ ===
-from ffdl import ffdl
-ffmpeg_path = ffdl.get_ffmpeg_path()
+import os
+ffmpeg_path = "./bin/ffmpeg" if os.path.exists("./bin/ffmpeg") else "ffmpeg"
 
 # ==================== ១. WEB SERVER សម្រាប់ KEEP ALIVE ២៤/៧ ====================
 app = Flask('')
