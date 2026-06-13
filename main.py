@@ -31,11 +31,9 @@ bot = commands.Bot(command_prefix="T!", intents=intents)
 async def connect_nodes():
     await bot.wait_until_ready()
     
-    # ឱ្យវាទាញយកលីងចេញពីផ្ទាំង Variables របស់ Railway វិញដើម្បីកុំឱ្យគាំង Cache កូដ
-    lavalink_url = os.getenv('LAVALINK_URL', 'http://railway.internal')
-    
+    # ប្រើប្រាស់ 'url' (អក្សរតូចទាំងអស់) ជំនួស 'uri' និងភ្ជាប់ទៅកាន់ម៉ាស៊ីន lavalink-2026 របស់អ្នក
     node = wavelink.Node(
-        uri=lavalink_url,  
+        url="http://railway.internal",  
         password="youshallnotpass"
     )
     await wavelink.Pool.connect(nodes=[node], client=bot)
