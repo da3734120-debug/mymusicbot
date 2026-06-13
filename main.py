@@ -1,16 +1,17 @@
 import discord
 from discord.ext import commands
-import wavelink
+import yt_dlp
 import os
+import asyncio
 from flask import Flask
 from threading import Thread
 
-# ==================== ១. WEB SERVER សម្រាប់ KEEP ALIVE ២ POUR ៤/៧ ====================
+# ==================== ១. WEB SERVER សម្រាប់ KEEP ALIVE ២៤/៧ ====================
 app = Flask('')
 
 @app.route('/')
 def home():
-    return "TwT Music Lavalink Bot is Online 24/7!"
+    return "TwT Music Bot is Online 24/7 WITHOUT LAVALINK!"
 
 def run_web():
     port = int(os.getenv('PORT', 8080))
@@ -27,63 +28,75 @@ intents.voice_states = True
 
 bot = commands.Bot(command_prefix="T!", intents=intents)
 
-# ==================== ៣. ប្រព័ន្ធតភ្ជាប់ទៅកាន់ម៉ាស៊ីនចាក់ភ្លេង ====================
-async def connect_nodes():
-    await bot.wait_until_ready()
-    
-    # ប្រើប្រាស់ 'url' (អក្សរតូចទាំងអស់) ជំនួស 'uri' និងភ្ជាប់ទៅកាន់ម៉ាស៊ីន lavalink-2026 របស់អ្នក
-    node = wavelink.Node(
-        url="http://railway.internal",  
-        password="youshallnotpass"
-    )
-    await wavelink.Pool.connect(nodes=[node], client=bot)
+# ការកំណត់សម្រាប់ទាញយកសំឡេងពី YouTube (ទម្រង់ថ្មីឆ្នាំ ២០២៦)
+YTDL_OPTIONS = {
+    'format': 'bestaudio/best',
+    'noplaylist': 'True',
+    'extractaudio': True,
+    'audioformat': 'mp3',
+    'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
+    'restrictfilenames': True,
+    'nocheckcertificate': True,
+    'ignoreerrors': False,
+    'logtostderr': False,
+    'quiet': True,
+    'no_warnings': True,
+    'default_search': 'auto',
+    'source_address': '0.0.0.0'
+}
+
+FFMPEG_OPTIONS = {
+    'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 
+    'options': '-vn'
+}
 
 @bot.event
 async def on_ready():
-    print(f"=== {bot.user.name} (Lavalink Edition) ONLINE ===")
-    bot.loop.create_task(connect_nodes())
+    print(f"=== {bot.user.name} (Direct YT Edition) ONLINE ===")
 
-@bot.event
-async def on_wavelink_node_ready(payload: wavelink.NodeReadyEventPayload):
-    print(f"✅ ម៉ាស៊ីន Lavalink Node [{payload.node.identifier}] ភ្ជាប់ជោគជ័យ និងត្រៀមខ្លួនរួចរាល់!")
-
-# ==================== ៤. DISCORD MUSIC COMMANDS (FULL) ====================
+# ==================== ៣. DISCORD MUSIC COMMANDS (ចាក់ផ្ទាល់មិនឆ្លង Node) ====================
 @bot.command(name="p")
 async def play(ctx, *, search: str):
-    # ១. ពិនិត្យមើលថាតើអ្នកប្រើប្រាស់នៅក្នុង Voice Room ឬអត់
     if not ctx.author.voice:
         return await ctx.send("❌ អ្នកត្រូវតែចូលក្នុង Voice Channel សិន!")
         
     destination = ctx.author.voice.channel
     
-    # ២. ស្វែងរកបទចម្រៀងតាមរយៈប្រព័ន្ធ 'ytsearch:' មុននឹងឱ្យ Bot ចូល Room
-    tracks = await wavelink.Playable.search(f"ytsearch:{search}")
-    if not tracks:
-        return await ctx.send("❌ រកមិនឃើញបទចម្រៀង ឬលីងនេះទេ!")
-        
-    # ៣. ចាប់យកបទចម្រៀងដំបូងគេបង្អស់ (First Track) ពីក្នុងប្រអប់លទ្ធផល
-    track = tracks[0] 
-    
-    # ៤. បញ្ជាឱ្យ Bot ចូលទៅក្នុង Voice Channel បើវាមិនទាន់ចូល
+    # ឱ្យ Bot ចូលក្នុង Voice Room ភ្លាមៗនៅពេលវាយបញ្ជា
     if not ctx.voice_client:
-        player: wavelink.Player = await destination.connect(cls=wavelink.Player)
+        vc = await destination.connect()
     else:
-        player: wavelink.Player = ctx.voice_client
-        
-    # ៥. ដំណើរការចាក់ភ្លេង
-    await player.play(track)
+        vc = ctx.voice_client
+
+    await ctx.send(f"🔍 កំពុងស្វែងរកបទចម្រៀង៖ {search}...")
+
+    # ទាញយក Link សំឡេងដោយប្រើ yt-dlp
+    with yt_dlp.YoutubeDL(YTDL_OPTIONS) as ytdl:
+        try:
+            info = ytdl.extract_info(f"ytsearch:{search}", download=False)['entries'][0]
+            url = info['url']
+            title = info['title']
+        except Exception as e:
+            return await ctx.send("❌ មិនអាចទាញយកបទចម្រៀងនេះបានទេ (YouTube Block IP របស់ Host)។")
+
+    # បញ្ឈប់ភ្លេងចាស់ បើមានកំពុងលេង
+    if vc.is_playing():
+        vc.stop()
+
+    # ដំណើរការចាក់ភ្លេងចូលក្នុង Room ដោយប្រើ FFmpeg 
+    source = await discord.FFmpegOpusAudio.from_probe(url, **FFMPEG_OPTIONS)
+    vc.play(source)
     
-    # ៦. បង្ហាញផ្ទាំង Embed ស្អាតៗនៅក្នុង Chat 
     embed = discord.Embed(
-        description=f"🟢 កំពុងចាក់បទ៖ **[{track.title}]({track.uri})**", 
+        description=f"🟢 កំពុងចាក់បទ៖ **{title}**", 
         color=0x1ed760
     )
     await ctx.send(embed=embed)
 
 @bot.command()
 async def skip(ctx):
-    if ctx.voice_client:
-        await ctx.voice_client.skip()
+    if ctx.voice_client and ctx.voice_client.is_playing():
+        ctx.voice_client.stop()
         await ctx.send("⏭️ បានរំលងចម្រៀងចោលជោគជ័យ!")
     else:
         await ctx.send("❌ គ្មានបទចម្រៀងកំពុងលេងទេ។")
@@ -96,7 +109,7 @@ async def stop(ctx):
     else:
         await ctx.send("❌ Bot មិនទាន់បានចូល Voice Channel ឡើយ។")
 
-# ==================== ៥. ដំណើរការ APPLICATION រួមគ្នាជាមួយ WEB PORT ====================
+# ==================== ៤. ដំណើរការ APPLICATION ====================
 keep_alive()
 
 TOKEN = os.getenv('DISCORD_TOKEN')
