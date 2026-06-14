@@ -32,7 +32,8 @@ bot = commands.Bot(command_prefix="T!", intents=intents)
 YTDL_OPTIONS = {
     'format': 'bestaudio/best',
     'noplaylist': 'True',
-    # ប្រព័ន្ធបញ្ជាក់គណនី OAuth2 ឆ្នាំ ២០២៦
+    # បង្ខំឱ្យលុប Cache ចាស់ៗចោលរាល់ពេលដំណើរការដើម្បីឱ្យវាព្រមបញ្ចេញលេខកូដផ្ទៀងផ្ទាត់
+    'rm_cachedir': True, 
     'youtube_include_oauth': True,
     'extractor_args': {
         'youtube': {
