@@ -32,6 +32,7 @@ bot = commands.Bot(command_prefix="T!", intents=intents)
 YTDL_OPTIONS = {
     'format': 'bestaudio/best',
     'noplaylist': 'True',
+    'cookiefile': 'youtube-cookies.txt',  # <=== ត្រូវប្រាកដថាមានជួរថ្មីនេះ
     'extractaudio': True,
     'audioformat': 'mp3',
     'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
