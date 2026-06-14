@@ -32,7 +32,8 @@ bot = commands.Bot(command_prefix="T!", intents=intents)
 YTDL_OPTIONS = {
     'format': 'bestaudio/best',
     'noplaylist': 'True',
-    'cookiefile': 'youtube-cookies.txt',  # <=== ត្រូវប្រាកដថាមានជួរថ្មីនេះ
+    # ប្តូរមកប្រើប្រាស់ប្រព័ន្ធបញ្ជាក់គណនី Smart TV OAuth2 ជំនួស Cookies
+    'youtube_include_oauth': True,
     'extractaudio': True,
     'audioformat': 'mp3',
     'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
