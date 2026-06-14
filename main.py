@@ -32,8 +32,14 @@ bot = commands.Bot(command_prefix="T!", intents=intents)
 YTDL_OPTIONS = {
     'format': 'bestaudio/best',
     'noplaylist': 'True',
-    # ប្តូរមកប្រើប្រាស់ប្រព័ន្ធបញ្ជាក់គណនី Smart TV OAuth2 ជំនួស Cookies
+    # ប្រព័ន្ធបញ្ជាក់គណនី OAuth2 ឆ្នាំ ២០២៦
     'youtube_include_oauth': True,
+    'extractor_args': {
+        'youtube': {
+            'client': ['TVEmbed', 'WEB'],
+            'skip': ['dash', 'hls']
+        }
+    },
     'extractaudio': True,
     'audioformat': 'mp3',
     'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
