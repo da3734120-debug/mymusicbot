@@ -1,4 +1,3 @@
-
 import discord
 from discord.ext import commands
 import yt_dlp
@@ -67,14 +66,14 @@ async def on_ready():
 @bot.command(name="p")
 async def play(ctx, *, search: str):
     if not ctx.author.voice:
-        return await ctx.send("❌ អ្នកត្រូវតែចូលក្នុង Voice Channel S sិន!")
+        return await ctx.send("❌ អ្នកត្រូវតែចូលក្នុង Voice Channel មុនសិន!")
         
     destination = ctx.author.voice.channel
     
     if not ctx.voice_client:
-    vc = await destination.connect(timeout=60.0)  # ត្រូវប្រាកដថាបន្ទាត់នេះមានចន្លោះឃ្លាត (Indent) ចូលក្នុង
-else:
-    vc = ctx.voice_client                          # បន្ទាត់នេះក៏ត្រូវមានចន្លោះឃ្លាតចូលក្នុងស្មើគ្នាដែរ
+        vc = await destination.connect(timeout=60.0)  
+    else:
+        vc = ctx.voice_client                          
 
     await ctx.send(f"🔍 កំពុងស្វែងរកបទចម្រៀង៖ {search}...")
 
@@ -119,7 +118,7 @@ async def stop(ctx):
         await ctx.voice_client.disconnect()
         await ctx.send("👋 បានបិទ និងចាកចេញពី Voice Channel រួចរាល់។")
     else:
-        await ctx.send("❌ Bot មិនទាន់បានចូល Voice Channel ឡើយ।")
+        await ctx.send("❌ Bot មិនទាន់បានចូល Voice Channel ឡើយ។")
 
 # ==================== ៤. ដំណើរការ APPLICATION ====================
 keep_alive()
