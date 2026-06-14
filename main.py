@@ -72,9 +72,9 @@ async def play(ctx, *, search: str):
     destination = ctx.author.voice.channel
     
     if not ctx.voice_client:
-    vc = await destination.connect(timeout=60.0) 
+    vc = await destination.connect(timeout=60.0)  # ត្រូវប្រាកដថាបន្ទាត់នេះមានចន្លោះឃ្លាត (Indent) ចូលក្នុង
 else:
-    vc = ctx.voice_client
+    vc = ctx.voice_client                          # បន្ទាត់នេះក៏ត្រូវមានចន្លោះឃ្លាតចូលក្នុងស្មើគ្នាដែរ
 
     await ctx.send(f"🔍 កំពុងស្វែងរកបទចម្រៀង៖ {search}...")
 
