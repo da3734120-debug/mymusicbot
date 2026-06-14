@@ -72,7 +72,7 @@ async def play(ctx, *, search: str):
     destination = ctx.author.voice.channel
     
     if not ctx.voice_client:
-    vc = await destination.connect(timeout=60.0)  # <=== បន្ថែមពាក្យពណ៌ដិតនេះចូល
+    vc = await destination.connect(timeout=60.0) 
 else:
     vc = ctx.voice_client
 
