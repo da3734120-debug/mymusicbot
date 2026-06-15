@@ -11,7 +11,7 @@ app = Flask('')
 
 @app.route('/')
 def home():
-    return "Tw Money Slots Game with Spinning Animation is Online!"
+    return "Tw Money Slots Game with Vertical Animation is Online!"
 
 def run_web():
     port = int(os.getenv('PORT', 8080))
@@ -25,24 +25,22 @@ def keep_alive():
 intents = discord.Intents.default()
 intents.message_content = True
 
-bot = commands.Bot(command_prefix="", intents=intents)
+bot = commands.Bot(command_prefix="Tw", intents=intents)
 
-# លេខកូដរូបថត App Emoji របស់អ្នក
-OWNER_PHOTO_EMOJI = "<:photooutput:1515974261599244338>"
+# 🌟 គ្រាប់រង្វាន់ទាំង ៥ របស់អ្នក (រៀបតាមតម្លៃពីថ្លៃទៅថោក)
+EMOJI_1 = "<:photooutput:1515974261599244338>"  # ថ្លៃបំផុត
+EMOJI_2 = "<:IMG_8344:1516003344093548646>"
+EMOJI_3 = "<:IMG_8343:1516004106412621924>"
+EMOJI_4 = "<:IMG_8342:1516004432612163725>"
+EMOJI_5 = "<:IMG_8350:1516004852130517073>"
 
-# 🌟 រូបភាព GIF សម្រាប់ប្រើពេលកំពុងវិល (ប្រើរូបព្រួញវិលចម្រុះពណ៌ Standard របស់ Discord)
-# ទោះលេងនៅ Server ណាក៏រូបភាពនេះរត់វិលយ៉ាងលឿន និងរលូនជានិច្ច មិនគាំងឡើយ
-SPINNING_EMOJI = "🔄"
-
-# បញ្ជីគុណតម្លៃរង្វាន់
+# គុណតម្លៃរង្វាន់
 EMOJI_VALUES = {
-    OWNER_PHOTO_EMOJI: 10,  # JACKPOT GRAND PRIZE (x10)
-    '7️⃣': 7,
-    '💎': 5,
-    '🍊': 4,
-    '🍇': 3,
-    '🍓': 2,
-    '🍒': 1.5
+    EMOJI_1: 10,
+    EMOJI_2: 7,
+    EMOJI_3: 5,
+    EMOJI_4: 3,
+    EMOJI_5: 2
 }
 
 SLOTS_EMOJIS = list(EMOJI_VALUES.keys())
@@ -51,10 +49,10 @@ work_cooldown = {}
 
 @bot.event
 async def on_ready():
-    print(f"🎰 {bot.user.name} with Spinning Animation is Ready!")
+    print(f"🎰 {bot.user.name} with Vertical Rolling is Ready!")
 
 # ==================== 🎰 SLOTS COMMAND (Tw [bet]) ====================
-@bot.command(name="Tw")
+@bot.command(name="")
 async def play_slots(ctx, bet: str = None):
     user_id = ctx.author.id
     custom_coin = "**Tw money**"
@@ -63,7 +61,7 @@ async def play_slots(ctx, bet: str = None):
         user_balances[user_id] = 0
         
     if bet is None:
-        return await ctx.send(f"❌ Please enter a bet amount! Example: Tw 50 or Tw all (Balance: {user_balances[user_id]} {custom_coin})")
+        return await ctx.send(f"❌ Please enter a bet amount! Example: Tw 50 (Balance: {user_balances[user_id]} {custom_coin})")
     
     if bet.lower() == "all":
         bet_amount = user_balances[user_id]
@@ -77,41 +75,65 @@ async def play_slots(ctx, bet: str = None):
         return await ctx.send("❌ Bet amount must be greater than 0!")
         
     if bet_amount > user_balances[user_id]:
-        return await ctx.send(f"❌ You don't have enough money! Balance: {user_balances[user_id]} {custom_coin} (Type Twork to earn money)")
+        return await ctx.send(f"❌ You don't have enough money! Balance: {user_balances[user_id]} {custom_coin}")
 
-    # រៀបចំលទ្ធផលពិតប្រាកដទុកជាមុន
-    slot1 = random.choice(SLOTS_EMOJIS)
-    slot2 = random.choice(SLOTS_EMOJIS)
-    slot3 = random.choice(SLOTS_EMOJIS)
+    # កំណត់លទ្ធផលពិតប្រាកដទុកជាមុន
+    final1 = random.choice(SLOTS_EMOJIS)
+    final2 = random.choice(SLOTS_EMOJIS)
+    final3 = random.choice(SLOTS_EMOJIS)
+
+    # បង្កើតរូបភាពចៃដន្យសម្រាប់ធ្វើជា Frame បន្លំភ្នែកពេលវាកំពុងរត់ឡើងលើ
+    rand1, rand2, rand3 = random.choice(SLOTS_EMOJIS), random.choice(SLOTS_EMOJIS), random.choice(SLOTS_EMOJIS)
+    rand4, rand5, rand6 = random.choice(SLOTS_EMOJIS), random.choice(SLOTS_EMOJIS), random.choice(SLOTS_EMOJIS)
 
     frame_title = "🎀 ┃ SLOTS ┃ 🎀"
+
+    # --- 🌟 ដំណាក់កាលចលនាវិលបញ្ឈរ (Vertical Rolling Animation) 🌟 ---
     
-    # 🌟 ១. បង្ហាញផ្ទាំងរូបភាពវិលល្បឿនលឿនដំបូង (រត់វិលដោយប្រើរូប GIF ស្វ័យប្រវត្ត)
+    # 🎬 Frame ទី ១: បង្ហាញរូបភាពដំបូង
     msg_text = (
         f"{frame_title}\n"
-        f"**[** ⬛ {SPINNING_EMOJI} ⬛ {SPINNING_EMOJI} ⬛ {SPINNING_EMOJI} ⬛ ] **i'm**\n"
+        f"**[** ⬛ {rand1} ⬛ {rand2} ⬛ {rand3} ⬛ ]\n"
         f"┃          ┃ bet 🪙 {bet_amount}\n"
         f"┃          ┃ spinning... 🎰"
     )
     spin_msg = await ctx.send(msg_text)
-    
-    # 🌟 ២. ទុកពេល ២ វិនាទីឱ្យប្រព័ន្ធរូបភាពរត់វិលយ៉ាងលឿនពេញភ្នែកអ្នកលេង
-    await asyncio.sleep(2.0)
+    await asyncio.sleep(0.4)
+
+    # 🎬 Frame ទី ២: រុញរូបចាស់ឡើងលើ ជំនួសរូបថ្មីចូលពីក្រោម
+    msg_text = (
+        f"{frame_title}\n"
+        f"**[** ⬛ {rand4} ⬛ {rand5} ⬛ {rand6} ⬛ ]\n"
+        f"┃          ┃ bet 🪙 {bet_amount}\n"
+        f"┃          ┃ rolling up... ⬆️"
+    )
+    await spin_msg.edit(content=msg_text)
+    await asyncio.sleep(0.4)
+
+    # 🎬 Frame ទី ៣: រុញឡើងលើម្តងទៀត ជិតដល់រូបពិតប្រាកដ
+    msg_text = (
+        f"{frame_title}\n"
+        f"**[** ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ ]\n"
+        f"┃          ┃ bet 🪙 {bet_amount}\n"
+        f"┃          ┃ stopping... 🎰"
+    )
+    await spin_msg.edit(content=msg_text)
+    await asyncio.sleep(0.4)
 
     # ==================== WIN / LOSE CALCULATION ====================
-    if slot1 == slot2 == slot3:
-        multiplier = EMOJI_VALUES[slot1]
+    if final1 == final2 == final3:
+        multiplier = EMOJI_VALUES[final1]
         win_amount = int(bet_amount * multiplier)
         user_balances[user_id] += win_amount
         
-        if slot1 == OWNER_PHOTO_EMOJI:
+        if final1 == EMOJI_1:
             result_comment = f"**and won the SUPER JACKPOT!** +{win_amount} {custom_coin} 👑"
         else:
             result_comment = f"**and won the JACKPOT!** +{win_amount} {custom_coin} 🎉"
         
-    elif slot1 == slot2 or slot2 == slot3 or slot1 == slot3:
-        matched_emoji = slot2 if slot2 == slot3 or slot1 == slot2 else slot1
-        multiplier = EMOJI_VALUES[matched_emoji] / 2
+    elif final1 == final2 or final2 == final3 or final1 == final3:
+        matched = final2 if final2 == final3 or final1 == final2 else final1
+        multiplier = EMOJI_VALUES[matched] / 2
         win_amount = int(bet_amount * multiplier)
         if win_amount < 1: win_amount = 1
         
@@ -122,10 +144,10 @@ async def play_slots(ctx, bet: str = None):
         user_balances[user_id] -= bet_amount
         result_comment = f"**and won nothing... :c** (Lost -{bet_amount} {custom_coin})"
 
-    # 🌟 ៣. កែប្រែសារបង្ហាញផ្ទាំងលទ្ធផលចុងក្រោយ ឈប់ចំរូបភាពពិតប្រាកដ
+    # 🎬 Frame ទី ៤ (លទ្ធផលចុងក្រោយ): រូបភាពឈប់ចំលទ្ធផលពិតប្រាកដ
     final_text = (
         f"{frame_title}\n"
-        f"**[** ⬛ {slot1} ⬛ {slot2} ⬛ {slot3} ⬛ ] **i'm**\n"
+        f"**[** ⬛ {final1} ⬛ {final2} ⬛ {final3} ⬛ ] **i'm**\n"
         f"┃          ┃ bet 🪙 {bet_amount}\n"
         f"┃          ┃ {result_comment}\n"
         f"💰 Current Balance: {user_balances[user_id]} {custom_coin}"
@@ -133,14 +155,14 @@ async def play_slots(ctx, bet: str = None):
     
     result_embed = discord.Embed(description=final_text, color=0xffd700)
     
-    # បើឈ្នះ Jackpot រូបថតរបស់អ្នក ឱ្យឡើងរូបថតធំពីក្រោមថែមទៀត
-    if slot1 == slot2 == slot3 == OWNER_PHOTO_EMOJI:
+    # បើឈ្នះ Super Jackpot ឱ្យឡើងរូបភាពធំពីក្រោម
+    if final1 == final2 == final3 == EMOJI_1:
         result_embed.set_image(url="https://discordapp.com")
 
     await spin_msg.edit(content="", embed=result_embed)
 
 # ==================== 💼 WORK COMMAND (Twork) ====================
-@bot.command(name="Twork")
+@bot.command(name="work")
 async def work(ctx):
     user_id = ctx.author.id
     custom_coin = "**Tw money**"
@@ -150,7 +172,7 @@ async def work(ctx):
         if remaining > 0:
             minutes = int(remaining // 60)
             seconds = int(remaining % 60)
-            return await ctx.send(f"⏳ @{ctx.author.name}, you are tired! Please rest and try again in {minutes}m {seconds}s.")
+            return await ctx.send(f"⏳ @{ctx.author.name}, please rest and try again in {minutes}m {seconds}s.")
 
     if user_id not in user_balances:
         user_balances[user_id] = 0
@@ -158,20 +180,14 @@ async def work(ctx):
     earnings = random.randint(50, 200)
     user_balances[user_id] += earnings
     
-    jobs = [
-        "Constructed a new building site 👷",
-        "Served fresh coffee as a barista 👨‍🍳",
-        "Delivered packages all day long 🚗",
-        "Fixed a lot of website system bugs 💻"
-    ]
+    jobs = ["Constructed a building 👷", "Served coffee 👨‍🍳", "Delivered packages 🚗", "Fixed bugs 💻"]
     random_job = random.choice(jobs)
 
     await ctx.send(f"💼 {random_job} and earned +{earnings} {custom_coin}!\n💰 Current Balance: {user_balances[user_id]} {custom_coin}")
-    
     work_cooldown[user_id] = asyncio.get_event_loop().time() + 300
 
 # ==================== 💰 BALANCE COMMAND (Twbal) ====================
-@bot.command(name="Twbal")
+@bot.command(name="bal")
 async def balance(ctx):
     user_id = ctx.author.id
     custom_coin = "**Tw money**"
@@ -179,7 +195,7 @@ async def balance(ctx):
         user_balances[user_id] = 0
     await ctx.send(f"💰 @{ctx.author.name}'s Balance: {user_balances[user_id]} {custom_coin}")
 
-# Start Server and Bot
+# Run Server and Bot
 keep_alive()
 
 TOKEN = os.getenv('DISCORD_TOKEN')
