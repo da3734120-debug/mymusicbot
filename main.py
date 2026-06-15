@@ -40,7 +40,7 @@ work_cooldown = {}
 
 @bot.event
 async def on_ready():
-    print(f"🎰 {bot.user.name} with Matrix Smooth Slots is Ready!")
+    print(f"🎰 {bot.user.name} with True Rolling Animation is Ready!")
 
 # ==================== 🛠️ MESSAGE COMMAND HANDLER ====================
 @bot.event
@@ -68,7 +68,7 @@ async def on_message(message):
 
     await bot.process_commands(message)
 
-# ==================== 🎰 SLOTS LOGIC (ចលនាវិលដេញជួរ) ====================
+# ==================== 🎰 SLOTS LOGIC (ចលនាវិលទម្លាក់ល្បឿនលឿន) ====================
 async def play_slots_logic(ctx, bet: str = None):
     user_id = ctx.author.id
     custom_coin = "**Tw money**"
@@ -90,89 +90,81 @@ async def play_slots_logic(ctx, bet: str = None):
     if bet_amount <= 0 or bet_amount > user_balances[user_id]:
         return await ctx.send(f"❌ Invalid amount or not enough money! Balance: {user_balances[user_id]} {custom_coin}")
 
-    # ១. កំណត់លទ្ធផលឈ្នះចាញ់ពិតប្រាកដទុកមុន
+    # ១. កំណត់លទ្ធផលពិតប្រាកដទុកជាមុន
     final1 = random.choice(SLOTS_EMOJIS)
     final2 = random.choice(SLOTS_EMOJIS)
     final3 = random.choice(SLOTS_EMOJIS)
 
-    frame_title = "🎀 ┃ SLOTS MACHINE ┃ 🎀"
+    frame_title = "🎀 ┃ SLOTS ┃ 🎀"
 
-    # ២. បង្កើតចលនាវិលបែប Matrix (រុញអក្សរឡើងលើ Frame by Frame)
-    # បង្កើតរូបភាពចៃដន្យសម្រាប់ដេញជួរ
-    r = [random.choice(SLOTS_EMOJIS) for _ in range(9)]
+    # ២. ដំណាក់កាលរត់អក្សរវិលទម្លាក់ចុះយ៉ាងលឿន (Text-Only High-Speed Frames)
+    # បង្កើតរូបភាពបន្លំភ្នែកប្តូរជួរដេញគ្នាទៅលើ
+    f1 = [random.choice(SLOTS_EMOJIS) for _ in range(3)]
+    f2 = [random.choice(SLOTS_EMOJIS) for _ in range(3)]
+    f3 = [random.choice(SLOTS_EMOJIS) for _ in range(3)]
 
-    # 🎬 Frame ទី ១: ចាប់ផ្តើមវិលញាប់
+    # 🎬 Frame ទី ១: ផ្ដើមវិលស្លេវ
     msg_text = (
         f"{frame_title}\n"
-        f" ┌───⚙️───⚙️───⚙️───┐\n"
-        f"  [ ⬛ {r[0]} ⬛ {r[1]} ⬛ {r[2]} ⬛ ] ⬆️\n"
-        f"▶ [ ⬛ {r[3]} ⬛ {r[4]} ⬛ {r[5]} ⬛ ] 🌟\n"
-        f"  [ ⬛ {r[6]} ⬛ {r[7]} ⬛ {r[8]} ⬛ ] ⬆️\n"
-        f" └───🎰───🎰───🎰───┘\n"
-        f"┃ bet 🪙 {bet_amount} ┃ spinning..."
+        f"**[** ⬛ {f1[0]} ⬛ {f1[1]} ⬛ {f1[2]} ⬛ ] **i'm**\n"
+        f"┃          ┃ bet 🪙 {bet_amount}\n"
+        f"┃          ┃ spinning... 🎰"
     )
     spin_msg = await ctx.send(msg_text)
-    await asyncio.sleep(0.35) # ល្បឿនលឿនបំផុតដែលមិនទាក់ទើរ
+    await asyncio.sleep(0.3)
 
-    # 🎬 Frame ទី ២: រុញរូបចាស់ឡើងលើ ជំនួសរូបថ្មីចូល (មើលទៅឃើញវិលបញ្ឈរ)
+    # 🎬 Frame ទី ២: រូបភាពរមៀលទម្លាក់ចុះក្រោម
     msg_text = (
         f"{frame_title}\n"
-        f" ┌───⚙️───⚙️───⚙️───┐\n"
-        f"  [ ⬛ {r[3]} ⬛ {r[4]} ⬛ {r[5]} ⬛ ] ⬆️\n"
-        f"▶ [ ⬛ {r[6]} ⬛ {r[7]} ⬛ {r[8]} ⬛ ] 🌟\n"
-        f"  [ ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ ] ⬆️\n"
-        f" └───🎰───🎰───🎰───┘\n"
-        f"┃ bet 🪙 {bet_amount} ┃ rolling fast..."
+        f"**[** ⬛ {f2[0]} ⬛ {f2[1]} ⬛ {f2[2]} ⬛ ] **i'm**\n"
+        f"┃          ┃ bet 🪙 {bet_amount}\n"
+        f"┃          ┃ rolling... 🔄"
     )
     await spin_msg.edit(content=msg_text)
-    await asyncio.sleep(0.35)
+    await asyncio.sleep(0.3)
 
-    # 🎬 Frame ទី ៣: ជិតឈប់ (លទ្ធផលពិតចាប់ផ្តើមរត់ចូលមកពីជួរក្រោម)
+    # 🎬 Frame ទី ៣: ជិតដល់ទីតាំងឈប់
     msg_text = (
         f"{frame_title}\n"
-        f" ┌───⚙️───⚙️───⚙️───┐\n"
-        f"  [ ⬛ {r[6]} ⬛ {r[7]} ⬛ {r[8]} ⬛ ] ⬆️\n"
-        f"▶ [ ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ ] 🌟\n"
-        f"  [ ⬛ {final1} ⬛ {final2} ⬛ {final3} ⬛ ] ⬆️\n"
-        f" └───🎰───🎰───🎰───┘\n"
-        f"┃ bet 🪙 {bet_amount} ┃ slowing down..."
+        f"**[** ⬛ {f3[0]} ⬛ {f3[1]} ⬛ {f3[2]} ⬛ ] **i'm**\n"
+        f"┃          ┃ bet 🪙 {bet_amount}\n"
+        f"┃          ┃ stopping... 🎰"
     )
     await spin_msg.edit(content=msg_text)
-    await asyncio.sleep(0.35)
+    await asyncio.sleep(0.3)
 
     # ==================== WIN / LOSE CALCULATION ====================
     if final1 == final2 == final3:
         multiplier = EMOJI_VALUES[final1]
         win_amount = int(bet_amount * multiplier)
         user_balances[user_id] += win_amount
-        result_comment = f"🎉 JACKPOT! +{win_amount} {custom_coin}"
+        result_comment = f"**and won the JACKPOT!** +{win_amount} {custom_coin} 🎉"
     elif final1 == final2 or final2 == final3 or final1 == final3:
         matched = final2 if final2 == final3 or final1 == final2 else final1
         win_amount = int(bet_amount * (EMOJI_VALUES[matched] / 2))
         if win_amount < 1: win_amount = 1
         user_balances[user_id] += win_amount
-        result_comment = f"💵 2-Match Combo! +{win_amount} {custom_coin}"
+        result_comment = f"**and won a 2-Match Combo!** +{win_amount} {custom_coin} 💵"
     else:
         user_balances[user_id] -= bet_amount
-        result_comment = f"❌ You lost... (-{bet_amount} {custom_coin})"
+        result_comment = f"**and won nothing... :c** (Lost -{bet_amount} {custom_coin})"
 
-    # 🎬 Frame ទី ៤ (លទ្ធផលចុងក្រោយ): រូបភាពរុញឡើងមកចំជួរកណ្តាល (ជួរឈ្នះផ្លូវការ)
-    # បង្កើតរូបភាពចៃដន្យសម្រាប់ជួរលើ និងជួរក្រោមដើម្បីបង្កើនភាពស្អាត
-    top1, top2, top3 = random.choice(SLOTS_EMOJIS), random.choice(SLOTS_EMOJIS), random.choice(SLOTS_EMOJIS)
-    bot1, bot2, bot3 = random.choice(SLOTS_EMOJIS), random.choice(SLOTS_EMOJIS), random.choice(SLOTS_EMOJIS)
-
+    # 🎬 Frame ទី ៤ (លទ្ធផលចុងក្រោយ): លុបជួរអក្សរចលនា រួចលោតផ្ទាំង Embed លទ្ធផលពិត
     final_layout = (
         f"{frame_title}\n"
-        f" ┌───⚙️───⚙️───⚙️───┐\n"
-        f"  [ ⬛ {top1} ⬛ {top2} ⬛ {top3} ⬛ ]\n"
-        f"▶ [ ⬛ {final1} ⬛ {final2} ⬛ {final3} ⬛ ] 👑\n"
-        f"  [ ⬛ {bot1} ⬛ {bot2} ⬛ {bot3} ⬛ ]\n"
-        f" └───🎰───🎰───🎰───┘\n"
-        f"┃ {result_comment}\n"
-        f"💰 Balance: {user_balances[user_id]} {custom_coin}"
+        f"**[** ⬛ {final1} ⬛ {final2} ⬛ {final3} ⬛ ] **i'm**\n"
+        f"┃          ┃ bet 🪙 {bet_amount}\n"
+        f"┃          ┃ {result_comment}\n"
+        f"💰 Current Balance: {user_balances[user_id]} {custom_coin}"
     )
     
     result_embed = discord.Embed(description=final_layout, color=0xffd700)
+    
+    # បើឈ្នះ Jackpot រូបថតរបស់អ្នក
+    if final1 == final2 == final3 == EMOJI_1:
+        result_embed.set_image(url="https://discordapp.com")
+
+    # លុប Text ខាងលើចោល (content="") រួចបង្ហាញ Embed ចូលជំនួសបេះបិទ
     await spin_msg.edit(content="", embed=result_embed)
 
 # ==================== 💼 WORK LOGIC ====================
@@ -180,7 +172,8 @@ async def work_logic(ctx):
     user_id = ctx.author.id
     custom_coin = "**Tw money**"
     if user_id in work_cooldown and work_cooldown[user_id] - asyncio.get_event_loop().time() > 0:
-        return await ctx.send("⏳ You are tired! Please rest 5 minutes.")
+        remaining = work_cooldown[user_id] - asyncio.get_event_loop().time()
+        return await ctx.send(f"⏳ You are tired! Try again in {int(remaining)}s.")
         
     earnings = random.randint(50, 200)
     user_balances[user_id] = user_balances.get(user_id, 0) + earnings
@@ -195,4 +188,3 @@ async def balance_logic(ctx):
 keep_alive()
 TOKEN = os.getenv('DISCORD_TOKEN')
 if TOKEN: bot.run(TOKEN)
-    
