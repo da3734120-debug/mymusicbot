@@ -34,8 +34,9 @@ def draw_board(board):
     return "\n---------\n".join(lines)
 
 def check_winner(b):
-    # កែប្រែត្រង់ចំណុចនេះ៖ ដាក់លេខជួរឈ្នះឱ្យពេញលេញ
-    win_states = [, [3, 4, 5], [6, 7, 8],  # ជួរដេក, [1, 4, 7], [2, 5, 8],  # ជួរឈរ, [2, 4, 6]              # ជួរទ្រូង
+    win_states = [, [3, 4, 5], [6, 7, 8],
+, [1, 4, 7], [2, 5, 8],
+, [2, 4, 6]
     ]
     for state in win_states:
         if b[state[0]] == b[state[1]] == b[state[2]] and b[state[0]] != "⬜":
