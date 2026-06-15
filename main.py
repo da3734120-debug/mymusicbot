@@ -131,8 +131,7 @@ async def play_slots_logic(ctx, bet: str = None):
             f"┃          ┃ spinning... 🎰"
         )
         await spin_msg.edit(content=text_shuffle)
-        await asyncio.sleep(0.
-        2) # ល្បឿនវិលលឿន ០.២ វិនាទីម្តង
+        await asyncio.sleep(0.2) # ល្បឿនវិលលឿន ០.២ វិនាទីម្តង
 
     # 🎬 ដំណាក់កាលទី ២: កង់ទី១ ឈប់ចំរូបពិត (`final1`) ចំណែកកង់ទី២ និងទី៣ នៅបន្តវិលដូររូបញាប់ៗ
     for _ in range(3):
