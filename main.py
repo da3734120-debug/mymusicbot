@@ -151,7 +151,7 @@ async def xo(ctx, p2: discord.Member, bet_amount: int):
     await ctx.send(f"💸 {loser.mention} បានចាញ់ការប្រកួត (សមតុល្យនៅសល់៖ {user_balances[loser.id]})")
 
 # --- ផ្នែកទី ៣៖ ដកស្រង់ Token ពី Render Environment Variable ហើយដំណើរការ Bot ---
-if _name_ == "__main__":
+if __name__ == "__main__":
     keep_alive() # បើក Web Server ជំនួយ
     # ទាញយក Token ពី Environment Variable ដែលមានឈ្មោះថា DISCORD_TOKEN នៅលើ Render
     token = os.getenv('DISCORD_TOKEN') 
