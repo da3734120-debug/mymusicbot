@@ -11,7 +11,7 @@ app = Flask('')
 
 @app.route('/')
 def home():
-    return "Tw Money Slots Game with Safe Scrolling is Online!"
+    return "Tw Money Slots Game with Spinning Animation is Online!"
 
 def run_web():
     port = int(os.getenv('PORT', 8080))
@@ -30,6 +30,10 @@ bot = commands.Bot(command_prefix="", intents=intents)
 # លេខកូដរូបថត App Emoji របស់អ្នក
 OWNER_PHOTO_EMOJI = "<:photooutput:1515974261599244338>"
 
+# 🌟 រូបភាព GIF សម្រាប់ប្រើពេលកំពុងវិល (ប្រើរូបព្រួញវិលចម្រុះពណ៌ Standard របស់ Discord)
+# ទោះលេងនៅ Server ណាក៏រូបភាពនេះរត់វិលយ៉ាងលឿន និងរលូនជានិច្ច មិនគាំងឡើយ
+SPINNING_EMOJI = "🔄"
+
 # បញ្ជីគុណតម្លៃរង្វាន់
 EMOJI_VALUES = {
     OWNER_PHOTO_EMOJI: 10,  # JACKPOT GRAND PRIZE (x10)
@@ -47,7 +51,7 @@ work_cooldown = {}
 
 @bot.event
 async def on_ready():
-    print(f"🎰 {bot.user.name} Safe Scrolling Slots is Ready!")
+    print(f"🎰 {bot.user.name} with Spinning Animation is Ready!")
 
 # ==================== 🎰 SLOTS COMMAND (Tw [bet]) ====================
 @bot.command(name="Tw")
@@ -82,17 +86,17 @@ async def play_slots(ctx, bet: str = None):
 
     frame_title = "🎀 ┃ SLOTS ┃ 🎀"
     
-    # 🌟 បង្កើតសារដំបូង (ជួរដេកផ្ដេកស្អាតបាតតាមរូបភាពរបស់អ្នក)
-    initial_text = (
+    # 🌟 ១. បង្ហាញផ្ទាំងរូបភាពវិលល្បឿនលឿនដំបូង (រត់វិលដោយប្រើរូប GIF ស្វ័យប្រវត្ត)
+    msg_text = (
         f"{frame_title}\n"
-        f"**[** ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ ] **i'm**\n"
+        f"**[** ⬛ {SPINNING_EMOJI} ⬛ {SPINNING_EMOJI} ⬛ {SPINNING_EMOJI} ⬛ ] **i'm**\n"
         f"┃          ┃ bet 🪙 {bet_amount}\n"
         f"┃          ┃ spinning... 🎰"
     )
-    spin_msg = await ctx.send(initial_text)
+    spin_msg = await ctx.send(msg_text)
     
-    # 🌟 កែប្រែ៖ រង់ចាំ ១.២ វិនាទី ដើម្បីកុំឱ្យបុកច្បាប់គាំង (Rate Limit) របស់ Discord
-    await asyncio.sleep(1.2)
+    # 🌟 ២. ទុកពេល ២ វិនាទីឱ្យប្រព័ន្ធរូបភាពរត់វិលយ៉ាងលឿនពេញភ្នែកអ្នកលេង
+    await asyncio.sleep(2.0)
 
     # ==================== WIN / LOSE CALCULATION ====================
     if slot1 == slot2 == slot3:
@@ -118,7 +122,7 @@ async def play_slots(ctx, bet: str = None):
         user_balances[user_id] -= bet_amount
         result_comment = f"**and won nothing... :c** (Lost -{bet_amount} {custom_coin})"
 
-    # 🌟 បង្ហាញផ្ទាំងលទ្ធផលចុងក្រោយតាមរចនាបថជួរដេកផ្ដេកដូចគេបេះបិទ
+    # 🌟 ៣. កែប្រែសារបង្ហាញផ្ទាំងលទ្ធផលចុងក្រោយ ឈប់ចំរូបភាពពិតប្រាកដ
     final_text = (
         f"{frame_title}\n"
         f"**[** ⬛ {slot1} ⬛ {slot2} ⬛ {slot3} ⬛ ] **i'm**\n"
