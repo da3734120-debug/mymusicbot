@@ -36,15 +36,15 @@ EMOJI_5 = "🪙 COIN"
 
 SLOTS_EMOJIS = [EMOJI_1, EMOJI_2, EMOJI_3, EMOJI_4, EMOJI_5]
 
-# 🔥 លីងរូបភាព GIF វិលញាប់ៗបែប OwO Bot (ជាហ្វាយ GIF មានចលនាពិតប្រាកដ រត់រលូន ១០០%)
-URL_SPINNING_GIF = "https://giphy.com"
+# 🔥 កែប្រែត្រង់នេះ៖ ប្រើលីង GIF ម៉ាស៊ីនស្លតវិលផ្ទាល់ពី Discord ធានាមិនចេញរូបខូចចិត្តទៀតទេ មានចលនាវិល ១០០%
+URL_SPINNING_GIF = "https://discordapp.net" 
 
 user_balances = {}
 work_cooldown = {} 
 
 @bot.event
 async def on_ready():
-    print(f"🎰 {bot.user.name} Slots Game (OwO Style) is Ready!")
+    print(f"🎰 {bot.user.name} Slots Game (Discord GIF Style) is Ready!")
 
 # ==================== 🛠️ MESSAGE COMMAND HANDLER ====================
 @bot.event
@@ -58,7 +58,7 @@ async def on_message(message):
     if len(args) == 0:
         return
 
-    # ឆែកពាក្យបញ្ជា "Tw" ឱ្យដំណើរការភ្លាមៗ
+    # ឆែកពាក្យបញ្ជា "Tw"
     if args[0] == "Tw":
         bet_val = args[1] if len(args) > 1 else None
         ctx = await bot.get_context(message)
@@ -77,7 +77,7 @@ async def on_message(message):
 
     await bot.process_commands(message)
 
-# ==================== 🎰 SLOTS LOGIC (OwO Bot Style) ====================
+# ==================== 🎰 SLOTS LOGIC ====================
 async def play_slots_logic(ctx, bet: str = None):
     user_id = ctx.author.id
     custom_coin = "**Tw money**"
@@ -101,7 +101,7 @@ async def play_slots_logic(ctx, bet: str = None):
 
     frame_title = "🎀 ┃ TW SLOTS MACHINE 777 ┃ 🎀"
 
-    # 🎬 ដំណាក់កាលទី ១៖ ផ្ញើផ្ទាំង Embed រូបភាព GIF វិលកញ្ជ្រោលភ្លាមៗ (ដូច OwO Bot ធ្វើ)
+    # 🎬 ដំណាក់កាលទី ១៖ ផ្ញើផ្ទាំង Embed រូបភាព GIF វិលផ្លូវការរបស់ Discord
     embed_spinning = discord.Embed(
         title=frame_title,
         description=f"🎰 ម៉ាស៊ីនកំពុងវិលយ៉ាងញាប់... កំពុងអ៊ុតរកគ្រាប់រង្វាន់! 🎰\n\n┃ 🪙 ប្រាក់ភ្នាល់: {bet_amount} {custom_coin}",
@@ -142,9 +142,9 @@ async def play_slots_logic(ctx, bet: str = None):
     
     result_embed = discord.Embed(title=frame_title, description=final_layout, color=0xffd700)
     
-    # បើត្រូវ Jackpot ដាក់រូបភាព GIF អបអរសាទរធ្លាក់លុយបន្ថែម
+    # បើត្រូវ Jackpot ដាក់រូបភាព GIF អបអរសាទរធ្លាក់លុយពី Discord ផ្ទាល់
     if final1 == final2 == final3:
-        result_embed.set_image(url="https://giphy.com")
+        result_embed.set_image(url="https://discordapp.net")
 
     # កែប្រែផ្ទាំង Embed ចាស់ទៅជាលទ្ធផលចុងក្រោយភ្លាមៗ
     await spin_msg.edit(embed=result_embed)
