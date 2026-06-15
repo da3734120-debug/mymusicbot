@@ -11,7 +11,7 @@ app = Flask('')
 
 @app.route('/')
 def home():
-    return "Tw Money Slots Game with Scrolling Animation is Online!"
+    return "Tw Money Slots Game with Safe Scrolling is Online!"
 
 def run_web():
     port = int(os.getenv('PORT', 8080))
@@ -47,7 +47,7 @@ work_cooldown = {}
 
 @bot.event
 async def on_ready():
-    print(f"🎰 {bot.user.name} Scrolling Animation Edition is Ready!")
+    print(f"🎰 {bot.user.name} Safe Scrolling Slots is Ready!")
 
 # ==================== 🎰 SLOTS COMMAND (Tw [bet]) ====================
 @bot.command(name="Tw")
@@ -82,34 +82,17 @@ async def play_slots(ctx, bet: str = None):
 
     frame_title = "🎀 ┃ SLOTS ┃ 🎀"
     
-    # 🌟 ប្រព័ន្ធគំនូរជីវចលរត់រំកិលពីលើចុះក្រោម (Scrolling Dynamic Effect)
-    # យើងប្រើការបង្កើតជួរដេកដេញគ្នា ចំនួន ៣ បន្ទាត់ដើម្បីឱ្យភ្នែកមើលឃើញរូបភាពរត់ធ្លាក់ចុះមកក្រោមលឿនញាប់
-    try:
-        for i in range(3):
-            await asyncio.sleep(0.12)  # ល្បឿនលឿនបំផុតដែល Discord មិនបង្កឱ្យគាំង
-            
-            # ចាប់ផ្ដើមរៀបចំជួរដេកឱ្យរត់ដេញគ្នា
-            top_row = f"┃ ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ ┃  ▼ *rolling*"
-            mid_row = f"**[** ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ ]  **i'm**"
-            bot_row = f"┃ ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ ┃  ▲ *scrolling*"
-            
-            shuffle_text = (
-                f"{frame_title}\n"
-                f"{top_row}\n"
-                f"{mid_row}\n"
-                f"{bot_row}\n"
-                f"┃          ┃ bet 🪙 {bet_amount}\n"
-                f"┃          ┃ spinning fast... 🎰"
-            )
-            
-            if i == 0:
-                spin_msg = await ctx.send(shuffle_text)
-            else:
-                await spin_msg.edit(content=shuffle_text)
-    except:
-        pass
-
-    await asyncio.sleep(0.2)
+    # 🌟 បង្កើតសារដំបូង (ជួរដេកផ្ដេកស្អាតបាតតាមរូបភាពរបស់អ្នក)
+    initial_text = (
+        f"{frame_title}\n"
+        f"**[** ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ ] **i'm**\n"
+        f"┃          ┃ bet 🪙 {bet_amount}\n"
+        f"┃          ┃ spinning... 🎰"
+    )
+    spin_msg = await ctx.send(initial_text)
+    
+    # 🌟 កែប្រែ៖ រង់ចាំ ១.២ វិនាទី ដើម្បីកុំឱ្យបុកច្បាប់គាំង (Rate Limit) របស់ Discord
+    await asyncio.sleep(1.2)
 
     # ==================== WIN / LOSE CALCULATION ====================
     if slot1 == slot2 == slot3:
@@ -121,7 +104,8 @@ async def play_slots(ctx, bet: str = None):
             result_comment = f"**and won the SUPER JACKPOT!** +{win_amount} {custom_coin} 👑"
         else:
             result_comment = f"**and won the JACKPOT!** +{win_amount} {custom_coin} 🎉"
-            elif slot1 == slot2 or slot2 == slot3 or slot1 == slot3:
+        
+    elif slot1 == slot2 or slot2 == slot3 or slot1 == slot3:
         matched_emoji = slot2 if slot2 == slot3 or slot1 == slot2 else slot1
         multiplier = EMOJI_VALUES[matched_emoji] / 2
         win_amount = int(bet_amount * multiplier)
@@ -134,12 +118,10 @@ async def play_slots(ctx, bet: str = None):
         user_balances[user_id] -= bet_amount
         result_comment = f"**and won nothing... :c** (Lost -{bet_amount} {custom_coin})"
 
-    # 🌟 បង្ហាញផ្ទាំងលទ្ធផលចុងក្រោយ៖ ជួរកណ្ដាលឈប់ចំរូបពិតប្រាកដ រួចបង្ហាញទឹកប្រាក់
+    # 🌟 បង្ហាញផ្ទាំងលទ្ធផលចុងក្រោយតាមរចនាបថជួរដេកផ្ដេកដូចគេបេះបិទ
     final_text = (
         f"{frame_title}\n"
-        f"┃ ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ ┃  ▼ *stopped*\n"
-        f"**[** ⬛ {slot1} ⬛ {slot2} ⬛ {slot3} ⬛ ]  **i'm**\n"
-        f"┃ ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ ┃  ▲ *stopped*\n"
+        f"**[** ⬛ {slot1} ⬛ {slot2} ⬛ {slot3} ⬛ ] **i'm**\n"
         f"┃          ┃ bet 🪙 {bet_amount}\n"
         f"┃          ┃ {result_comment}\n"
         f"💰 Current Balance: {user_balances[user_id]} {custom_coin}"
