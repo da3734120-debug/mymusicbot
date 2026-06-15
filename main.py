@@ -27,8 +27,8 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix="", intents=intents)
 
-# 🌟 បង្កើតអក្សរលីងរូបថតរបស់អ្នក (ទោះលេងនៅ Server ណាក៏ឡើងរូបភាពច្បាស់ក្រឡែតដែរ)
-OWNER_PHOTO_LINK = "[🖼️](https://discordapp.com)"
+# 🌟 កែប្រែ៖ ប្រើប្រាស់លីងរូបភាពទំហំតូចប៉ុន Emoji ដើម្បីឱ្យវាបង្ហាញរូបថតរបស់អ្នកក្នុងជួរលទ្ធផលផ្ទាល់
+OWNER_PHOTO_LINK = "https://discordapp.com"
 
 # បញ្ជីគុណតម្លៃរង្វាន់
 EMOJI_VALUES = {
@@ -107,7 +107,7 @@ async def play_slots(ctx, bet: str = None):
         
         if slot1 == OWNER_PHOTO_LINK:
             result_embed.description = f"🌟 SUPER JACKPOT (BOT OWNER)! 🌟\nYou won the grand prize from the Bot Owner's photo!\n💵 Received: +{win_amount} {custom_coin}\n💰 Total: {user_balances[user_id]} {custom_coin}"
-            result_embed.set_image(url="https://discordapp.com") # បង្ហាញរូបរបស់អ្នកធំពេញអេក្រង់តែម្តងពេលឈ្នះ
+            result_embed.set_image(url="https://discordapp.com") # បង្ហាញរូបរបស់អ្នកធំពេញអេក្រង់តែម្តងពេលឈ្នះ Jackpot
         else:
             result_embed.description = f"🎉 JACKPOT! YOU WIN! 🎉\n💵 Received: +{win_amount} {custom_coin}\n💰 Total: {user_balances[user_id]} {custom_coin}"
         result_embed.color = 0x00ff00
