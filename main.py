@@ -1,17 +1,17 @@
 import discord
 from discord.ext import commands
-import yt_dlp
+import random
 import os
 import asyncio
 from flask import Flask
 from threading import Thread
 
-# ==================== ១. WEB SERVER សម្រាប់ KEEP ALIVE ២៤/៧ ====================
+# ==================== WEB SERVER FOR KEEP ALIVE ====================
 app = Flask('')
 
 @app.route('/')
 def home():
-    return "TwT Music Bot is Online 24/7 WITHOUT LAVALINK!"
+    return "Tw Money Slots Game with Work Command is Online!"
 
 def run_web():
     port = int(os.getenv('PORT', 8080))
@@ -21,110 +21,163 @@ def keep_alive():
     t = Thread(target=run_web)
     t.start()
 
-# ==================== ២. SETUP INTENTS និង BOT ====================
+# ==================== SETUP DISCORD BOT ====================
 intents = discord.Intents.default()
 intents.message_content = True
-intents.voice_states = True 
 
-bot = commands.Bot(command_prefix="T!", intents=intents)
+bot = commands.Bot(command_prefix="", intents=intents)
 
-YTDL_OPTIONS = {
-    'format': 'bestaudio/best',
-    'noplaylist': 'True',
-    # បង្ខំឱ្យលុប Cache ចាស់ៗចោលរាល់ពេលដំណើរការដើម្បីឱ្យវាព្រមបញ្ចេញលេខកូដផ្ទៀងផ្ទាត់
-    'rm_cachedir': True, 
-    'youtube_include_oauth': True,
-    'extractor_args': {
-        'youtube': {
-            'client': ['TVEmbed', 'WEB'],
-            'skip': ['dash', 'hls']
-        }
-    },
-    'extractaudio': True,
-    'audioformat': 'mp3',
-    'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
-    'restrictfilenames': True,
-    'nocheckcertificate': True,
-    'ignoreerrors': False,
-    'logtostderr': False,
-    'quiet': True,
-    'no_warnings': True,
-    'default_search': 'auto',
-    'source_address': '0.0.0.0'
+# Emoji Multipliers (Your photo has the highest value x10)
+EMOJI_VALUES = {
+    '<:emoji_2:1515950500208578622>': 10,  # JACKPOT (Your photo)
+    '7️⃣': 7,
+    '💎': 5,
+    '🍊': 4,
+    '🍇': 3,
+    '🍓': 2,
+    '🍒': 1.5
 }
 
-FFMPEG_OPTIONS = {
-    'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 
-    'options': '-vn'
-}
+SLOTS_EMOJIS = list(EMOJI_VALUES.keys())
+user_balances = {}
+work_cooldown = {} # Cooldown system for Twork
 
 @bot.event
 async def on_ready():
-    print(f"=== {bot.user.name} (Direct YT Edition) ONLINE ===")
+    print(f"🎰 {bot.user.name} Is Ready! Use 'Tw [bet]' to play and 'Twork' to get money!")
 
-# ==================== ៣. DISCORD MUSIC COMMANDS ====================
-@bot.command(name="p")
-async def play(ctx, *, search: str):
-    if not ctx.author.voice:
-        return await ctx.send("❌ អ្នកត្រូវតែចូលក្នុង Voice Channel មុនសិន!")
-        
-    destination = ctx.author.voice.channel
+# ==================== 🎰 SLOTS COMMAND (Tw [bet]) ====================
+@bot.command(name="Tw")
+async def play_slots(ctx, bet: str = None):
+    user_id = ctx.author.id
+    custom_coin = "**Tw money**"
     
-    if not ctx.voice_client:
-        vc = await destination.connect(timeout=60.0)  
-    else:
-        vc = ctx.voice_client                          
-
-    await ctx.send(f"🔍 កំពុងស្វែងរកបទចម្រៀង៖ {search}...")
-
-    with yt_dlp.YoutubeDL(YTDL_OPTIONS) as ytdl:
-        try:
-            if search.startswith("http"):
-                info = ytdl.extract_info(search, download=False)
-            else:
-                info = ytdl.extract_info(f"ytsearch:{search}", download=False)['entries'][0]
-            
-            url = info['url']
-            title = info['title']
-        except Exception as e:
-            return await ctx.send(f"❌ មិនអាចទាញយកបទចម្រៀងនេះបានទេ៖ {e}")
-
-    if vc.is_playing():
-        vc.stop()
-
-    try:
-        source = await discord.FFmpegOpusAudio.from_probe(url, **FFMPEG_OPTIONS)
-        vc.play(source)
+    # Starting balance is 0
+    if user_id not in user_balances:
+        user_balances[user_id] = 0
         
-        embed = discord.Embed(
-            description=f"🟢 កំពុងចាក់បទ៖ **{title}**", 
-            color=0x1ed760
-        )
-        await ctx.send(embed=embed)
-    except Exception as e:
-        await ctx.send(f"❌ កំហុសពេលចាក់ភ្លេង (FFmpeg Error)៖ {e}")
-
-@bot.command()
-async def skip(ctx):
-    if ctx.voice_client and ctx.voice_client.is_playing():
-        ctx.voice_client.stop()
-        await ctx.send("⏭️ បានរំលងចម្រៀងចោលជោគជ័យ!")
+    if bet is None:
+        return await ctx.send(f"❌ Please enter a bet amount! Example: Tw 50 or Tw all (Balance: {user_balances[user_id]} {custom_coin})")
+    
+    # Bet All system
+    if bet.lower() == "all":
+        bet_amount = user_balances[user_id]
     else:
-        await ctx.send("❌ គ្មានបទចម្រៀងកំពុងលេងទេ។")
+        try:
+            bet_amount = int(bet)
+        except ValueError:
+            return await ctx.send("❌ Bet amount must be a number or all!")
+            
+    if bet_amount <= 0:
+        return await ctx.send("❌ Bet amount must be greater than 0!")
+        
+    if bet_amount > user_balances[user_id]:
+        return await ctx.send(f"❌ You don't have enough money! Balance: {user_balances[user_id]} {custom_coin} (Type Twork to earn money)")
 
-@bot.command()
-async def stop(ctx):
-    if ctx.voice_client:
-        await ctx.voice_client.disconnect()
-        await ctx.send("👋 បានបិទ និងចាកចេញពី Voice Channel រួចរាល់។")
+    # Spinning Animation
+    embed = discord.Embed(title="🎰 Tw Money Slots Machine 🎰", color=0xffd700)
+    embed.add_field(name="====== SPINNING ======", value="┃ 🟩 ┃ 🟩 ┃ 🟩 ┃", inline=False)
+    embed.description = f"@{ctx.author.name} is betting: {bet_amount} {custom_coin}..."
+    spin_msg = await ctx.send(embed=embed)
+    
+    slot1 = random.choice(SLOTS_EMOJIS)
+    slot2 = random.choice(SLOTS_EMOJIS)
+    slot3 = random.choice(SLOTS_EMOJIS)
+    
+    await asyncio.sleep(0.7)
+    embed.set_field_at(0, name="====== SPINNING ======", value=f"┃ {slot1} ┃ 🟩 ┃ 🟩 ┃", inline=False)
+    await spin_msg.edit(embed=embed)
+    
+    await asyncio.sleep(0.7)
+    embed.set_field_at(0, name="====== SPINNING ======", value=f"┃ {slot1} ┃ {slot2} ┃ 🟩 ┃", inline=False)
+    await spin_msg.edit(embed=embed)
+    
+    await asyncio.sleep(0.7)
+    
+    # ==================== WIN / LOSE CALCULATION ====================
+    result_embed = discord.Embed(title="🎰 Tw Money Slots Result 🎰")
+    result_embed.add_field(name="====== RESULT ======", value=f"┃ {slot1} ┃ {slot2} ┃ {slot3} ┃", inline=False)
+    
+    # Case 1: 3 Match (Jackpot!)
+    if slot1 == slot2 == slot3:
+        multiplier = EMOJI_VALUES[slot1]
+        win_amount = int(bet_amount * multiplier)
+        user_balances[user_id] += win_amount
+        
+        if slot1 == '<:emoji_2:1515950500208578622>':
+            result_embed.description = f"🌟 SUPER JACKPOT! 🌟\nYou won the grand prize from the Bot Owner's photo!\n💵 Received: +{win_amount} {custom_coin}\n💰 Total: {user_balances[user_id]} {custom_coin}"
+        else:
+            result_embed.description = f"🎉 JACKPOT! YOU WIN! 🎉\n💵 Received: +{win_amount} {custom_coin}\n💰 Total: {user_balances[user_id]} {custom_coin}"
+        result_embed.color = 0x00ff00
+        
+    # Case 2: 2 Match
+    elif slot1 == slot2 or slot2 == slot3 or slot1 == slot3:
+        matched_emoji = slot2 if slot2 == slot3 or slot1 == slot2 else slot1
+        multiplier = EMOJI_VALUES[matched_emoji] / 2
+        win_amount = int(bet_amount * multiplier)
+        if win_amount < 1: win_amount = 1
+        
+        user_balances[user_id] += win_amount
+        result_embed.description = f"💵 2 MATCH VALUE! 💵\n💵 Received: +{win_amount} {custom_coin}\n💰 Total: {user_balances[user_id]} {custom_coin}"
+        result_embed.color = 0x3498db
+        
+    # Case 3: Lose
     else:
-        await ctx.send("❌ Bot មិនទាន់បានចូល Voice Channel ឡើយ។")
+        user_balances[user_id] -= bet_amount
+        result_embed.description = f"❌ YOU LOSE! ❌\n📉 Lost: -{bet_amount} {custom_coin}\n💰 Balance: {user_balances[user_id]} {custom_coin}"
+        result_embed.color = 0xe74c3c
 
-# ==================== ៤. ដំណើរការ APPLICATION ====================
+    await spin_msg.edit(embed=result_embed)
+
+# ==================== 💼 WORK COMMAND (Twork) ====================
+@bot.command(name="Twork")
+async def work(ctx):
+    user_id = ctx.author.id
+    custom_coin = "**Tw money**"
+    
+    # Cooldown check (5 minutes or 300 seconds)
+    if user_id in work_cooldown and not bot.is_owner(ctx.author):
+        remaining = work_cooldown[user_id] - asyncio.get_event_loop().time()
+        if remaining > 0:
+            minutes = int(remaining // 60)
+            seconds = int(remaining % 60)
+            return await ctx.send(f"⏳ @{ctx.author.name}, you are tired! Please rest and try again in {minutes}m {seconds}s.")
+
+    if user_id not in user_balances:
+        user_balances[user_id] = 0
+
+    # Random earnings between 50 and 200
+    earnings = random.randint(50, 200)
+    user_balances[user_id] += earnings
+    
+    # English jobs list
+    jobs = [
+        "👷 You worked hard at a construction site",
+        "👨‍🍳 You worked as a busy barista at a coffee shop",
+        "🚗 You drove a delivery truck all day",
+        "💻 You fixed system bugs as a programmer"
+    ]
+    random_job = random.choice(jobs)
+
+    await ctx.send(f"💼 {random_job} and earned +{earnings} {custom_coin}!\n💰 Current Balance: {user_balances[user_id]} {custom_coin}")
+    
+    # Set cooldown
+    work_cooldown[user_id] = asyncio.get_event_loop().time() + 300
+
+# ==================== 💰 BALANCE COMMAND (Twbal) ====================
+@bot.command(name="Twbal")
+async def balance(ctx):
+    user_id = ctx.author.id
+    custom_coin = "**Tw money**"
+    if user_id not in user_balances:
+        user_balances[user_id] = 0
+    await ctx.send(f"💰 @{ctx.author.name}'s Balance: {user_balances[user_id]} {custom_coin}")
+
+# Start Server and Bot
 keep_alive()
 
 TOKEN = os.getenv('DISCORD_TOKEN')
 if TOKEN:
     bot.run(TOKEN)
 else:
-    print("⚠️ Error: DISCORD_TOKEN variable is missing!")
+    print("⚠️ Error: DISCORD_TOKEN is missing!")
