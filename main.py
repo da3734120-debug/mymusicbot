@@ -123,7 +123,8 @@ async def play_slots_logic(ctx, bet: str = None):
     if final1 == final2 == final3:
         multiplier = EMOJI_VALUES[final1]
         win_amount = int(bet_amount * multiplier)
-        user_balances[user_id] += win_amountif final1 == EMOJI_1:
+        user_balances[user_id] += win_amount
+        if final1 == EMOJI_1:
             result_comment = f"👑 and won the SUPER JACKPOT! +{win_amount} {custom_coin}"
         else:
             result_comment = f"🎉 and won the JACKPOT! +{win_amount} {custom_coin}"
@@ -188,4 +189,3 @@ keep_alive()
 TOKEN = os.getenv('DISCORD_TOKEN')
 if TOKEN: 
     bot.run(TOKEN)
-        
