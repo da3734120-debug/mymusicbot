@@ -3,7 +3,7 @@ from discord.ext import commands
 import random
 import os
 import asyncio
-import time  # ប្រើសម្រាប់ធ្វើប្រព័ន្ធ Cooldown ឱ្យត្រឹមត្រូវ
+import time
 from flask import Flask
 from threading import Thread
 
@@ -34,7 +34,7 @@ EMOJI_3 = "<:IMG_8343:1516004106412621924>"
 EMOJI_4 = "<:IMG_8342:1516004432612163725>"
 EMOJI_5 = "<:IMG_8350:1516004852130517073>"
 
-# 🔄 រូប GIF វិល 777 របស់អ្នក (បានថែមអក្សរ a នៅពីមុខត្រឹមត្រូវ)
+# 🔄 រូប GIF វិល 777 របស់អ្នក
 SPINNING = "<a:jago33slotmachine:1516039385332715602>" 
 
 EMOJI_VALUES = {EMOJI_1: 10, EMOJI_2: 7, EMOJI_3: 5, EMOJI_4: 3, EMOJI_5: 2}
@@ -51,23 +51,27 @@ async def on_ready():
 async def on_message(message):
     if message.author.bot:
         return
+        
     content = message.content.strip()
     args = content.split()
     
-    # ពិនិត្យមើលពាក្យបញ្ជា "Tw" សម្រាប់លេងស្លត
-    if len(args) > 0 and args[0] == "Tw":
+    if len(args) == 0:
+        return
+
+    # ឆែកពាក្យបញ្ជា "Tw"
+    if args[0] == "Tw":
         bet_val = args[1] if len(args) > 1 else None
         ctx = await bot.get_context(message)
         await play_slots_logic(ctx, bet_val)
         return
 
-    # ពិនិត្យមើលពាក្យបញ្ជា "Twork"
+    # ឆែកពាក្យបញ្ជា "Twork"
     if content == "Twork":
         ctx = await bot.get_context(message)
         await work_logic(ctx)
         return
 
-    # ពិនិត្យមើលពាក្យបញ្ជា "Twbal"
+    # ឆែកពាក្យបញ្ជា "Twbal"
     if content == "Twbal":
         ctx = await bot.get_context(message)
         await balance_logic(ctx)
@@ -75,7 +79,7 @@ async def on_message(message):
 
     await bot.process_commands(message)
 
-# ==================== 🎰 SLOTS LOGIC (ចលនាវិលឈប់ម្តងមួយកង់ៗ) ====================
+# ==================== 🎰 SLOTS LOGIC (កែប្រែឱ្យបង្ហាញក្នុង Embed ទាំងអស់ដើម្បីបង្ការការគាំង) ====================
 async def play_slots_logic(ctx, bet: str = None):
     user_id = ctx.author.id
     custom_coin = "**Tw money**"
@@ -95,44 +99,41 @@ async def play_slots_logic(ctx, bet: str = None):
             return await ctx.send("❌ Bet amount must be a number!")
             
     if bet_amount <= 0 or bet_amount > user_balances[user_id]:
-        return await ctx.send(f"❌ Invalid amount or not enough money!")
+        return await ctx.send(f"❌ Invalid amount or not enough money! Your balance is {user_balances[user_id]}")
 
-    # ១. កំណត់លទ្ធផលពិតប្រាកដទុកជាមុន
+    # កំណត់លទ្ធផលទុកជាមុន
     final1 = random.choice(SLOTS_EMOJIS)
     final2 = random.choice(SLOTS_EMOJIS)
     final3 = random.choice(SLOTS_EMOJIS)
 
     frame_title = "🎀 ┃ SLOTS MACHINE ┃ 🎀"
 
-    # 🎬 ដំណាក់កាលទី ១: បង្ហាញរូបវិលទាំង ៣ គ្រាប់ស្របគ្នា (លុប Markdown ដែលទើសចេញ)
-    text_1 = (
-        f"{frame_title}\n"
-        f"[ ⬛ {SPINNING} ⬛ {SPINNING} ⬛ {SPINNING} ⬛ ]\n"
-        f"┃          ┃ bet 🪙 {bet_amount}\n"
-        f"┃          ┃ spinning... 🎰"
+    # 🎬 ដំណាក់កាលទី ១: បង្ហាញរូបវិលទាំង ៣ ក្នុង Embed តែម្តង (វិធីនេះជួយឱ្យ Discord បង្ហាញរូបបានលឿន និងមិនគាំង)
+    embed_1 = discord.Embed(
+        title=frame_title,
+        description=f"[ ⬛ {SPINNING} ⬛ {SPINNING} ⬛ {SPINNING} ⬛ ]\n┃          ┃ bet 🪙 {bet_amount}\n┃          ┃ spinning... 🎰",
+        color=0xffd700
     )
-    spin_msg = await ctx.send(text_1)
-    await asyncio.sleep(1.2) # វិលរួមគ្នា ១.២ វិនាទី
+    spin_msg = await ctx.send(embed=embed_1)
+    await asyncio.sleep(1.2)
 
-    # 🎬 ដំណាក់កាលទី ២: ប្រអប់ទី១ ឈប់ចំរូបពិត (ប្រអប់ទី២ និងទី៣ នៅវិលដដែល)
-    text_2 = (
-        f"{frame_title}\n"
-        f"[ ⬛ {final1} ⬛ {SPINNING} ⬛ {SPINNING} ⬛ ]\n"
-        f"┃          ┃ bet 🪙 {bet_amount}\n"
-        f"┃          ┃ rolling... 🔄"
+    # 🎬 ដំណាក់កាលទី ២: ប្រអប់ទី១ ឈប់
+    embed_2 = discord.Embed(
+        title=frame_title,
+        description=f"[ ⬛ {final1} ⬛ {SPINNING} ⬛ {SPINNING} ⬛ ]\n┃          ┃ bet 🪙 {bet_amount}\n┃          ┃ rolling... 🔄",
+        color=0xffd700
     )
-    await spin_msg.edit(content=text_2)
-    await asyncio.sleep(0.7) # ទុកពេល ០.៧ វិនាទី
+    await spin_msg.edit(embed=embed_2)
+    await asyncio.sleep(0.7)
 
-    # 🎬 ដំណាក់កាលទី ៣: ប្រអប់ទី២ ឈប់ចំរូបពិតបន្ថែមទៀត (នៅសល់តែប្រអប់ទី៣ មួយគត់ដែលវិល)
-    text_3 = (
-        f"{frame_title}\n"
-        f"[ ⬛ {final1} ⬛ {final2} ⬛ {SPINNING} ⬛ ]\n"
-        f"┃          ┃ bet 🪙 {bet_amount}\n"
-        f"┃          ┃ stopping soon... 🎰"
+    # 🎬 ដំណាក់កាលទី ៣: ប្រអប់ទី២ ឈប់
+    embed_3 = discord.Embed(
+        title=frame_title,
+        description=f"[ ⬛ {final1} ⬛ {final2} ⬛ {SPINNING} ⬛ ]\n┃          ┃ bet 🪙 {bet_amount}\n┃          ┃ stopping soon... 🎰",
+    color=0xffd700
     )
-    await spin_msg.edit(content=text_3)
-    await asyncio.sleep(0.7) # ទុកពេល ០.៧ វិនាទីឱ្យអ្នកលេងអ៊ុតគ្រាប់ចុងក្រោយ
+    await spin_msg.edit(embed=embed_3)
+    await asyncio.sleep(0.7)
 
     # ==================== WIN / LOSE CALCULATION ====================
     if final1 == final2 == final3:
@@ -150,7 +151,7 @@ async def play_slots_logic(ctx, bet: str = None):
         user_balances[user_id] -= bet_amount
         result_comment = f"❌ You lost... (-{bet_amount} {custom_coin})"
 
-    # 🎬 ដំណាក់កាលចុងក្រោយ៖ ឈប់រូបភាពទាំងអស់ រួចប្តូរទៅផ្ទាំង Embed ពណ៌មាសបង្ហាញលទ្ធផលពិតបេះបិទ
+    # 🎬 ដំណាក់កាលចុងក្រោយ៖ ឈប់ទាំងអស់ រួចបង្ហាញលទ្ធផល
     final_layout = (
         f"[ ⬛ {final1} ⬛ {final2} ⬛ {final3} ⬛ ]\n"
         f"┃          ┃ bet 🪙 {bet_amount}\n"
@@ -162,8 +163,7 @@ async def play_slots_logic(ctx, bet: str = None):
     if final1 == final2 == final3 == EMOJI_1:
         result_embed.set_image(url="https://discordapp.com")
 
-    # កែប្រែ content ទៅជា None ដើម្បីកុំឱ្យជាន់គ្នាជាមួយផ្ទាំង Embed
-    await spin_msg.edit(content=None, embed=result_embed)
+    await spin_msg.edit(embed=result_embed)
 
 # ==================== 💼 WORK LOGIC ====================
 async def work_logic(ctx):
@@ -171,7 +171,6 @@ async def work_logic(ctx):
     custom_coin = "**Tw money**"
     current_time = time.time()
 
-    # ពិនិត្យមើលប្រព័ន្ធ Cooldown ៥ នាទី
     if user_id in work_cooldown and work_cooldown[user_id] > current_time:
         remaining = int(work_cooldown[user_id] - current_time)
         minutes = remaining // 60
@@ -181,7 +180,7 @@ async def work_logic(ctx):
     earnings = random.randint(50, 200)
     user_balances[user_id] = user_balances.get(user_id, 0) + earnings
     await ctx.send(f"💼 Worked hard and earned +{earnings} {custom_coin}!")
-    work_cooldown[user_id] = current_time + 300 # កំណត់ Cooldown ៥ នាទី (៣០០ វិនាទី)
+    work_cooldown[user_id] = current_time + 300
 
 # ==================== 💰 BALANCE LOGIC ====================
 async def balance_logic(ctx):
@@ -190,7 +189,6 @@ async def balance_logic(ctx):
         user_balances[user_id] = 1000
     await ctx.send(f"💰 Balance: {user_balances.get(user_id, 0)} **Tw money**")
 
-# ដំណើរការ Web Server និងរត់ Bot
 keep_alive()
 TOKEN = os.getenv('DISCORD_TOKEN')
 if TOKEN: 
