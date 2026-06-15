@@ -157,7 +157,7 @@ async def on_command_error(ctx, error):
         await ctx.send("❌ រកមិនឃើញបញ្ជានេះទេ! សូមប្រើប្រាស់ !wallet ឬ `!xo @ឈ្មោះមិត្តភក្តិ ចំនួនលុយ`។")
 
 # --- ផ្នែកទី ៣៖ រត់ Bot ---
-if name == "__main__":
+if __name__ == "__main__":
     keep_alive()
     token = os.getenv('DISCORD_TOKEN') 
     if token:
