@@ -11,7 +11,7 @@ app = Flask('')
 
 @app.route('/')
 def home():
-    return "Tw Money Slots Game with Work Command is Online!"
+    return "Tw Money Slots Game for All Servers is Online!"
 
 def run_web():
     port = int(os.getenv('PORT', 8080))
@@ -27,9 +27,12 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix="", intents=intents)
 
-# 🌟 កែប្រែ៖ ដកសញ្ញា < > និង : ចេញ ដោយទុកតែឈ្មោះ និងលេខ ID របស់វា
+# 🌟 បង្កើតអក្សរលីងរូបថតរបស់អ្នក (ទោះលេងនៅ Server ណាក៏ឡើងរូបភាពច្បាស់ក្រឡែតដែរ)
+OWNER_PHOTO_LINK = "[🖼️](https://discordapp.com)"
+
+# បញ្ជីគុណតម្លៃរង្វាន់
 EMOJI_VALUES = {
-    'emoji_2:1515950500208578622': 10,  # កែត្រង់ចំណុចនេះ
+    OWNER_PHOTO_LINK: 10,  # JACKPOT GRAND PRIZE (រូបថតរបស់អ្នក គុណនឹង ១០)
     '7️⃣': 7,
     '💎': 5,
     '🍊': 4,
@@ -40,11 +43,11 @@ EMOJI_VALUES = {
 
 SLOTS_EMOJIS = list(EMOJI_VALUES.keys())
 user_balances = {}
-work_cooldown = {} # Cooldown system for Twork
+work_cooldown = {} 
 
 @bot.event
 async def on_ready():
-    print(f"🎰 {bot.user.name} Is Ready! Use 'Tw [bet]' to play and 'Twork' to get money!")
+    print(f"🎰 {bot.user.name} for ALL SERVERS is Ready!")
 
 # ==================== 🎰 SLOTS COMMAND (Tw [bet]) ====================
 @bot.command(name="Tw")
@@ -52,14 +55,12 @@ async def play_slots(ctx, bet: str = None):
     user_id = ctx.author.id
     custom_coin = "**Tw money**"
     
-    # Starting balance is 0
     if user_id not in user_balances:
         user_balances[user_id] = 0
         
     if bet is None:
         return await ctx.send(f"❌ Please enter a bet amount! Example: Tw 50 or Tw all (Balance: {user_balances[user_id]} {custom_coin})")
     
-    # Bet All system
     if bet.lower() == "all":
         bet_amount = user_balances[user_id]
     else:
@@ -104,8 +105,9 @@ async def play_slots(ctx, bet: str = None):
         win_amount = int(bet_amount * multiplier)
         user_balances[user_id] += win_amount
         
-        if slot1 == '<:emoji_2:1515950500208578622>':
-            result_embed.description = f"🌟 SUPER JACKPOT! 🌟\nYou won the grand prize from the Bot Owner's photo!\n💵 Received: +{win_amount} {custom_coin}\n💰 Total: {user_balances[user_id]} {custom_coin}"
+        if slot1 == OWNER_PHOTO_LINK:
+            result_embed.description = f"🌟 SUPER JACKPOT (BOT OWNER)! 🌟\nYou won the grand prize from the Bot Owner's photo!\n💵 Received: +{win_amount} {custom_coin}\n💰 Total: {user_balances[user_id]} {custom_coin}"
+            result_embed.set_image(url="https://discordapp.com") # បង្ហាញរូបរបស់អ្នកធំពេញអេក្រង់តែម្តងពេលឈ្នះ
         else:
             result_embed.description = f"🎉 JACKPOT! YOU WIN! 🎉\n💵 Received: +{win_amount} {custom_coin}\n💰 Total: {user_balances[user_id]} {custom_coin}"
         result_embed.color = 0x00ff00
@@ -135,7 +137,6 @@ async def work(ctx):
     user_id = ctx.author.id
     custom_coin = "**Tw money**"
     
-    # Cooldown check (5 minutes or 300 seconds)
     if user_id in work_cooldown and not bot.is_owner(ctx.author):
         remaining = work_cooldown[user_id] - asyncio.get_event_loop().time()
         if remaining > 0:
@@ -146,11 +147,9 @@ async def work(ctx):
     if user_id not in user_balances:
         user_balances[user_id] = 0
 
-    # Random earnings between 50 and 200
     earnings = random.randint(50, 200)
     user_balances[user_id] += earnings
     
-    # English jobs list
     jobs = [
         "👷 You worked hard at a construction site",
         "👨‍🍳 You worked as a busy barista at a coffee shop",
@@ -161,7 +160,6 @@ async def work(ctx):
 
     await ctx.send(f"💼 {random_job} and earned +{earnings} {custom_coin}!\n💰 Current Balance: {user_balances[user_id]} {custom_coin}")
     
-    # Set cooldown
     work_cooldown[user_id] = asyncio.get_event_loop().time() + 300
 
 # ==================== 💰 BALANCE COMMAND (Twbal) ====================
