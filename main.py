@@ -20,10 +20,9 @@ def keep_alive():
     t = Thread(target=run_web_server)
     t.start()
 
-# --- ផ្នែកទី ២៖ បង្កើត Bot (កំណត់ឱ្យស្គាល់ទាំងអក្សរធំ និងតូច) ---
+# --- ផ្នែកទី ២៖ បង្កើត Bot ---
 intents = discord.Intents.default()
 intents.message_content = True
-# ប្រើសញ្ញា ! ហើយបន្ថែម case_insensitive=True ឱ្យស្គាល់ !WALLET ឬ !wallet
 bot = commands.Bot(command_prefix="!", intents=intents, case_insensitive=True)
 
 user_balances = {}
@@ -35,9 +34,8 @@ def draw_board(board):
     return "\n---------\n".join(lines)
 
 def check_winner(b):
-    win_states = [, [3, 4, 5], [6, 7, 8],
-, [1, 4, 7], [2, 5, 8],
-, [2, 4, 6]
+    # កែប្រែត្រង់ចំណុចនេះ៖ ដាក់លេខជួរឈ្នះឱ្យពេញលេញ
+    win_states = [, [3, 4, 5], [6, 7, 8],  # ជួរដេក, [1, 4, 7], [2, 5, 8],  # ជួរឈរ, [2, 4, 6]              # ជួរទ្រូង
     ]
     for state in win_states:
         if b[state[0]] == b[state[1]] == b[state[2]] and b[state[0]] != "⬜":
@@ -50,14 +48,12 @@ def check_winner(b):
 async def on_ready():
     print(f'📢 Bot XO ដំណើរការពេញលេញ៖ {bot.user.name}')
 
-# បញ្ជាឆែកលុយ (ស្គាល់ទាំង !wallet, !Wallet, !WALLET)
 @bot.command(name="wallet")
 async def wallet(ctx):
     balance = user_balances.get(ctx.author.id, 100)
     user_balances[ctx.author.id] = balance
     await ctx.send(f"💰 {ctx.author.mention} មានលុយ៖ {balance} កាក់")
 
-# បញ្ជាលេងហ្គេម XO
 @bot.command(name="xo")
 async def xo(ctx, p2: discord.Member, bet_amount: int):
     p1 = ctx.author
@@ -124,7 +120,9 @@ async def xo(ctx, p2: discord.Member, bet_amount: int):
 
             if board[move] != "⬜":
                 await ctx.send("❌ ឡូផ្លូវនោះមានគេដាក់រួចហើយ! ជ្រើសរើសលេខផ្សេង។")
-                continueboard[move] = current_symbol
+                continue
+
+            board[move] = current_symbol
             
             result = check_winner(board)
             if result:
@@ -153,11 +151,10 @@ async def xo(ctx, p2: discord.Member, bet_amount: int):
     await ctx.send(f"🎉 អបអរសាទរ! {winner.mention} ឈ្នះដាច់ជាស្ថាពរ និងទទួលបានកាក់ភ្នាល់ទាំងអស់សរុប {total_pot} កាក់! (សមតុល្យ៖ {user_balances[winner.id]})")
     await ctx.send(f"💸 {loser.mention} បានចាញ់ការប្រកួត (សមតុល្យនៅសល់៖ {user_balances[loser.id]})")
 
-# ប្រព័ន្ធចាប់កំហុស បើអ្នកលេងវាយបញ្ជាខុស វានឹងប្រាប់នៅក្នុង Discord ហ្មង
 @bot.event
 async def on_command_error(ctx, error):
     if isinstance(error, commands.CommandNotFound):
-        await ctx.send("❌ រកមិនឃើញបញ្ជានេះទេ! សូមប្រាកដថាអ្នកបានវាយ !wallet ឬ `!xo @ឈ្មោះមិត្តភក្តិ ចំនួនលុយ`។")
+        await ctx.send("❌ រកមិនឃើញបញ្ជានេះទេ! សូមប្រើប្រាស់ !wallet ឬ `!xo @ឈ្មោះមិត្តភក្តិ ចំនួនលុយ`។")
 
 # --- ផ្នែកទី ៣៖ រត់ Bot ---
 if name == "__main__":
@@ -165,5 +162,3 @@ if name == "__main__":
     token = os.getenv('DISCORD_TOKEN') 
     if token:
         bot.run(token)
-    else:
-        print("❌ រកមិនឃើញ DISCORD_TOKEN ទេ!")
