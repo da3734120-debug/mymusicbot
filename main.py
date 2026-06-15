@@ -27,7 +27,7 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix="", intents=intents)
 
-# លេខកូដរូបថត App Emoji ថ្មីរបស់អ្នក
+# លេខកូដរូបថត App Emoji របស់អ្នក
 OWNER_PHOTO_EMOJI = "<:photooutput:1515974261599244338>"
 
 # បញ្ជីគុណតម្លៃរង្វាន់
@@ -42,15 +42,12 @@ EMOJI_VALUES = {
 }
 
 SLOTS_EMOJIS = list(EMOJI_VALUES.keys())
-# បញ្ជីរូបភាពសម្រាប់ប្រើប្រាស់ក្នុងគំនូរជីវចលវិល (Spinning Effect)
-SPIN_ANIMATION_EMOJIS = ['🟪', '🟦', '🟥', '🟧', '🟨', '🟩']
-
 user_balances = {}
 work_cooldown = {} 
 
 @bot.event
 async def on_ready():
-    print(f"🎰 {bot.user.name} Slots Visual Remake is Ready!")
+    print(f"🎰 {bot.user.name} Fast Scrolling Slots is Ready!")
 
 # ==================== 🎰 SLOTS COMMAND (Tw [bet]) ====================
 @bot.command(name="Tw")
@@ -78,44 +75,48 @@ async def play_slots(ctx, bet: str = None):
     if bet_amount > user_balances[user_id]:
         return await ctx.send(f"❌ You don't have enough money! Balance: {user_balances[user_id]} {custom_coin} (Type Twork to earn money)")
 
-    # 🌟 រៀបចំរូបភាពចុងក្រោយដែលត្រូវឈ្នះចាញ់
+    # រៀបចំលទ្ធផលពិតប្រាកដទុកជាមុន
     slot1 = random.choice(SLOTS_EMOJIS)
     slot2 = random.choice(SLOTS_EMOJIS)
     slot3 = random.choice(SLOTS_EMOJIS)
 
-    # 🌟 ១. បង្កើតគំនូរជីវចលវិលពីលើចុះក្រោម (Vertical Spinning Effect)
-    # បន្ថែមផ្ទៃខាងក្រោយជាប្រអប់ក្រឡាខ្មៅងងឹត ⬛ នៅពីក្រោយរូបភាពដើម្បីកុំឱ្យទទេ
-    frame_title = "💮 ┃ SLOTS ┃ 💮"
+    frame_title = "🎐 ┃ SLOTS ┃ 🎐"
     
+    # 🌟 ១. គំនូរជីវចលរត់ដូររូបភាពក្នុងល្បឿនលឿន (Fast Scrolling Phase)
+    # ប្រព័ន្ធនឹងរត់ដូររូបភាពឆ្លាស់គ្នាយ៉ាងលឿន (asyncio.sleep ទាបបំផុត) ដើម្បីឱ្យឃើញរូបភាពទាំងអស់រត់កាត់
+    for _ in range(4):
+        msg_text = (
+            f"{frame_title}\n"
+            f"**[** ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ {random.choice(SLOTS_EMOJIS)} ] **i'm**\n"
+            f"┃ ⬛ ⬛ ⬛ ┃ bet 🪙 {bet_amount}\n"
+            f"┃ ⬛ ⬛ ⬛ ┃ and spinning... 🎰"
+        )
+        if _ == 0:
+            spin_msg = await ctx.send(msg_text)
+        else:
+            await spin_msg.edit(content=msg_text)
+        await asyncio.sleep(0.2) # ល្បឿនរត់លឿនញាប់
+
+    # 🌟 ២. ចាប់ហ្វ្រាំងឈប់ចំរូបលទ្ធផលពិតម្តងមួយៗពីឆ្វេងទៅស្តាំ
+    # ប្រអប់ទី ១ ឈប់
     msg_text = (
         f"{frame_title}\n"
-        f"**[** ⬛ {random.choice(SPIN_ANIMATION_EMOJIS)} ⬛ ]  I'm\n"
-        f"**[** ⬛ {random.choice(SPIN_ANIMATION_EMOJIS)} ⬛ ]  bet 🪙 {bet_amount}\n"
-        f"**[** ⬛ {random.choice(SPIN_ANIMATION_EMOJIS)} ⬛ ]  and spinning... 🎰"
-    )
-    spin_msg = await ctx.send(msg_text)
-    
-    # គំនូរជីវចលវិលកែប្រែសារ៖ ឈប់ចំរូបទី ១
-    await asyncio.sleep(0.6)
-    msg_text = (
-        f"{frame_title}\n"
-        f"**[** ⬛ {slot1} ⬛ ]  I'm\n"
-        f"**[** ⬛ {random.choice(SPIN_ANIMATION_EMOJIS)} ⬛ ]  bet 🪙 {bet_amount}\n"
-        f"**[** ⬛ {random.choice(SPIN_ANIMATION_EMOJIS)} ⬛ ]  and spinning... 🎰"
-    )
-    await spin_msg.edit(content=msg_text)
-    
-    # គំនូរជីវចលវិលកែប្រែសារ៖ ឈប់ចំរូបទី ២
-    await asyncio.sleep(0.6)
-    msg_text = (
-        f"{frame_title}\n"
-        f"**[** ⬛ {slot1} ⬛ ]  I'm\n"
-        f"**[** ⬛ {slot2} ⬛ ]  bet 🪙 {bet_amount}\n"
-        f"**[** ⬛ {random.choice(SPIN_ANIMATION_EMOJIS)} ⬛ ]  and spinning... 🎰"
+        f"**[** ⬛ {slot1} ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ {random.choice(SLOTS_EMOJIS)} ] **i'm**\n"
+        f"┃ ⬛ ⬛ ⬛ ┃ bet 🪙 {bet_amount}\n"
+        f"┃ ⬛ ⬛ ⬛ ┃ and spinning... 🎰"
     )
     await spin_msg.edit(content=msg_text)
+    await asyncio.sleep(0.4)
     
-    await asyncio.sleep(0.6)
+    # Presប្រអប់ទី ២ ឈប់
+    msg_text = (
+        f"{frame_title}\n"
+        f"**[** ⬛ {slot1} ⬛ {slot2} ⬛ {random.choice(SLOTS_EMOJIS)} ] **i'm**\n"
+        f"┃ ⬛ ⬛ ⬛ ┃ bet 🪙 {bet_amount}\n"
+        f"┃ ⬛ ⬛ ⬛ ┃ and spinning... 🎰"
+    )
+    await spin_msg.edit(content=msg_text)
+    await asyncio.sleep(0.4)
 
     # ==================== WIN / LOSE CALCULATION ====================
     if slot1 == slot2 == slot3:
@@ -124,9 +125,9 @@ async def play_slots(ctx, bet: str = None):
         user_balances[user_id] += win_amount
         
         if slot1 == OWNER_PHOTO_EMOJI:
-            result_comment = f"won the SUPER JACKPOT! +{win_amount} {custom_coin} 👑"
+            result_comment = f"and won the SUPER JACKPOT! +{win_amount} {custom_coin} 👑"
         else:
-            result_comment = f"won the JACKPOT! +{win_amount} {custom_coin} 🎉"
+            result_comment = f"and won the JACKPOT! +{win_amount} {custom_coin} 🎉"
         
     elif slot1 == slot2 or slot2 == slot3 or slot1 == slot3:
         matched_emoji = slot2 if slot2 == slot3 or slot1 == slot2 else slot1
@@ -135,18 +136,18 @@ async def play_slots(ctx, bet: str = None):
         if win_amount < 1: win_amount = 1
         
         user_balances[user_id] += win_amount
-        result_comment = f"won a 2-Match Combo! +{win_amount} {custom_coin} 💵"
+        result_comment = f"and won a 2-Match Combo! +{win_amount} {custom_coin} 💵"
         
     else:
         user_balances[user_id] -= bet_amount
-        result_comment = f"won nothing... :c (Lost -{bet_amount} {custom_coin})"
+        result_comment = f"and won nothing... :c"
 
-    # 🌟 ២. បង្ហាញផ្ទាំងលទ្ធផលចុងក្រោយតាមរចនាបថដែលអ្នកចង់បាន
+    # 🌟 ៣. បង្ហាញផ្ទាំងលទ្ធផលចុងក្រោយតាមរចនាបថជួរដេកផ្ដេក
     final_text = (
         f"{frame_title}\n"
-        f"**[** ⬛ {slot1} ⬛ ]  I'm\n"
-        f"**[** ⬛ {slot2} ⬛ ]  bet 🪙 {bet_amount}\n"
-        f"**[** ⬛ {slot3} ⬛ ]  and {result_comment}\n"
+        f"**[** ⬛ {slot1} ⬛ {slot2} ⬛ {slot3} ] **i'm**\n"
+        f"┃ ⬛ ⬛ ⬛ ┃ bet 🪙 {bet_amount}\n"
+        f"┃ ⬛ ⬛ ⬛ ┃ {result_comment}\n"
         f"💰 Current Balance: {user_balances[user_id]} {custom_coin}"
     )
     
