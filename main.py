@@ -34,15 +34,14 @@ def draw_board(board):
     return "\n---------\n".join(lines)
 
 def check_winner(b):
-    win_states = [, [3, 4, 5], [6, 7, 8],
-, [1, 4, 7], [2, 5, 8],
-, [2, 4, 6]
-    ]
-    for state in win_states:
-        if b[state[0]] == b[state[1]] == b[state[2]] and b[state[0]] != "⬜":
-            return b[state[0]]
-    if "⬜" not in b:
-        return "Tie"
+    # នេះជាវិធីសរសេររកជួរឈ្នះដោយមិនប្រើអារេលាយឡំលេខច្រើន ការពារកូដខូច
+    for i in range(0, 9, 3): # ឆែកជួរដេក
+        if b[i] == b[i+1] == b[i+2] != "⬜": return b[i]
+    for i in range(3): # ឆែកជួរឈរ
+        if b[i] == b[i+3] == b[i+6] != "⬜": return b[i]
+    if b[0] == b[4] == b[8] != "⬜": return b[0] # ជួរទ្រូងទី១
+    if b[2] == b[4] == b[6] != "⬜": return b[2] # ជួរទ្រូងទី២
+    if "⬜" not in b: return "Tie"
     return None
 
 @bot.event
