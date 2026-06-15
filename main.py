@@ -27,9 +27,9 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix="", intents=intents)
 
-# Emoji Multipliers (Your photo has the highest value x10)
+# 🌟 កែប្រែ៖ ដកសញ្ញា < > និង : ចេញ ដោយទុកតែឈ្មោះ និងលេខ ID របស់វា
 EMOJI_VALUES = {
-    '<:emoji_2:1515950500208578622>': 10,  # JACKPOT (Your photo)
+    'emoji_2:1515950500208578622': 10,  # កែត្រង់ចំណុចនេះ
     '7️⃣': 7,
     '💎': 5,
     '🍊': 4,
