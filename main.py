@@ -126,8 +126,7 @@ async def play_slots_logic(ctx, bet: str = None):
         multiplier = EMOJI_VALUES[final1]
         win_amount = int(bet_amount * multiplier)
         user_balances[user_id] += win_amount
-        result_comment = f"🎉 **JACKPOT! មហាសំណាងឈ្នះរង្វាន់ធំ!**\n💰 ទទួលបាន: +{win_amount} {custom_coin}"
-        elif final1 == final2 or final2 == final3 or final1 == final3:
+        result_comment = f"🎉 **JACKPOT! មហាសំណាងឈ្នះរង្វាន់ធំ!**\n💰 ទទួលបាន: +{win_amount} {custom_coin}"elif final1 == final2 or final2 == final3 or final1 == final3:
         matched = final2 if final2 == final3 or final1 == final2 else final1
         win_amount = int(bet_amount * (EMOJI_VALUES[matched] / 2))
         if win_amount < 1: win_amount = 1
