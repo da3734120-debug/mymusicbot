@@ -34,7 +34,7 @@ EMOJI_3 = "<:IMG_8343:1516004106412621924>"
 EMOJI_4 = "<:IMG_8342:1516004432612163725>"
 EMOJI_5 = "<:IMG_8350:1516004852130517073>"
 
-# 🔄 រូប GIF វិល 777 របស់អ្នក (កូដត្រឹមត្រូវរបស់បង)
+# 🔄 រូប GIF វិល 777 របស់អ្នក
 SPINNING = "<a:jago33slotmachine:1516039385332715602>" 
 
 EMOJI_VALUES = {EMOJI_1: 10, EMOJI_2: 7, EMOJI_3: 5, EMOJI_4: 3, EMOJI_5: 2}
@@ -45,7 +45,7 @@ work_cooldown = {}
 
 @bot.event
 async def on_ready():
-    print(f"🎰 {bot.user.name} Slots Game with Live Animation is Ready!")
+    print(f"🎰 {bot.user.name} Slots Game with Pure Embed Animation is Ready!")
 
 # ==================== 🛠️ MESSAGE COMMAND HANDLER ====================
 @bot.event
@@ -59,7 +59,7 @@ async def on_message(message):
     if len(args) == 0:
         return
 
-    # 🔥 ជួសជុល៖ ឆែកពាក្យដំបូងបង្អស់នៅក្នុង List args ឱ្យស្គាល់ពាក្យបញ្ជា "Tw" ពិតប្រាកដ
+    # 🔥 កែកន្លែងចាប់ពាក្យបញ្ជាឱ្យត្រូវស្តង់ដារ
     if args[0] == "Tw":
         bet_val = args[1] if len(args) > 1 else None
         ctx = await bot.get_context(message)
@@ -80,7 +80,7 @@ async def on_message(message):
 
     await bot.process_commands(message)
 
-# ==================== 🎰 SLOTS LOGIC (ចលនាវិលឈប់ម្តងមួយកង់ដូចក្នុង VDO) ====================
+# ==================== 🎰 SLOTS LOGIC (វិលឈប់ម្តងមួយកង់ក្នុង Embed ដើម្បីកុំឱ្យគាំង) ====================
 async def play_slots_logic(ctx, bet: str = None):
     user_id = ctx.author.id
     custom_coin = "**Tw money**"
@@ -109,35 +109,32 @@ async def play_slots_logic(ctx, bet: str = None):
 
     frame_title = "🎀 ┃ SLOTS MACHINE ┃ 🎀"
 
-    # 🎬 ដំណាក់កាលទី ១: ប្រអប់ទាំង ៣ វិលព្រមគ្នាឌុកដាក់ៗ (លុប Markdown ដែលទើសចេញ)
-    text_1 = (
-        f"{frame_title}\n"
-        f"[ ⬛ {SPINNING} ⬛ {SPINNING} ⬛ {SPINNING} ⬛ ]\n"
-        f"┃          ┃ bet 🪙 {bet_amount}\n"
-        f"┃          ┃ spinning... 🎰"
+    # 🎬 ដំណាក់កាលទី ១: បង្ហាញរូបវិលទាំង ៣ ក្នុង Embed តែម្តង
+    embed1 = discord.Embed(
+        title=frame_title,
+        description=f"[ ⬛ {SPINNING} ⬛ {SPINNING} ⬛ {SPINNING} ⬛ ]\n┃          ┃ bet 🪙 {bet_amount}\n┃          ┃ spinning... 🎰",
+        color=0xffd700
     )
-    spin_msg = await ctx.send(text_1)
-    await asyncio.sleep(1.5) # ទុកពេលឱ្យវិលរួមគ្នា ១.៥ វិនាទី
+    spin_msg = await ctx.send(embed=embed1)
+    await asyncio.sleep(1.2) # វិលរួមគ្នា ១.២ វិនាទី
 
     # 🎬 ដំណាក់កាលទី ២: កង់ទី១ ឈប់គ្រឹប (កង់ទី២ និងទី៣ នៅវិលបន្ត)
-    text_2 = (
-        f"{frame_title}\n"
-        f"[ ⬛ {final1} ⬛ {SPINNING} ⬛ {SPINNING} ⬛ ]\n"
-        f"┃          ┃ bet 🪙 {bet_amount}\n"
-        f"┃          ┃ rolling... 🔄"
+    embed2 = discord.Embed(
+        title=frame_title,
+        description=f"[ ⬛ {final1} ⬛ {SPINNING} ⬛ {SPINNING} ⬛ ]\n┃          ┃ bet 🪙 {bet_amount}\n┃          ┃ rolling... 🔄",
+        color=0xffd700
     )
-    await spin_msg.edit(content=text_2)
-    await asyncio.sleep(0.8) # ទុកពេល ០.៨ វិនាទី
+    await spin_msg.edit(embed=embed2)
+    await asyncio.sleep(0.7) # ទុកពេល ០.៧ វិនាទី
 
-    # 🎬 ដំណាក់កាលទី ៣: កង់ទី២ ឈប់គ្រឹបបន្ថែមទៀត (នៅសល់តែកង់ទី៣ មួយគត់ដែលវិលឱ្យអ៊ុត)
-    text_3 = (
-        f"{frame_title}\n"
-    f"[ ⬛ {final1} ⬛ {final2} ⬛ {SPINNING} ⬛ ]\n"
-        f"┃          ┃ bet 🪙 {bet_amount}\n"
-        f"┃          ┃ stopping soon... 🎰"
+    # 🎬 ដំណាក់កាលទី ៣: កង់ទី២ ឈប់គ្រឹបបន្ថែមទៀត (នៅសល់តែកង់ទី៣ មួយគត់ដែលវិល)
+    embed3 = discord.Embed(
+        title=frame_title,
+    description=f"[ ⬛ {final1} ⬛ {final2} ⬛ {SPINNING} ⬛ ]\n┃          ┃ bet 🪙 {bet_amount}\n┃          ┃ stopping soon... 🎰",
+        color=0xffd700
     )
-    await spin_msg.edit(content=text_3)
-    await asyncio.sleep(0.8) # ទុកពេល ០.៨ វិនាទីអ៊ុតគ្រាប់ចុងក្រោយ
+    await spin_msg.edit(embed=embed3)
+    await asyncio.sleep(0.7) # ទុកពេល ០.៧ វិនាទី
 
     # ==================== WIN / LOSE CALCULATION ====================
     if final1 == final2 == final3:
@@ -156,7 +153,7 @@ async def play_slots_logic(ctx, bet: str = None):
         user_balances[user_id] -= bet_amount
         result_comment = f"❌ **You lost... សោកស្តាយផងបង!**\n📉 បាត់បង់: -{bet_amount} {custom_coin}"
 
-    # 🎬 ដំណាក់កាលចុងក្រោយ៖ ឈប់ទាំងអស់ រួចប្តូរទៅផ្ទាំង Embed ពណ៌មាសយ៉ាងប្រណីតបង្ហាញលទ្ធផល
+    # 🎬 ដំណាក់កាលចុងក្រោយ៖ ឈប់ទាំងអស់ រួចប្តូរទៅផ្ទាំង Embed បង្ហាញលទ្ធផលចុងក្រោយ
     final_layout = (
         f"[ ⬛ {final1} ⬛ {final2} ⬛ {final3} ⬛ ]\n\n"
         f"{result_comment}\n"
@@ -168,8 +165,8 @@ async def play_slots_logic(ctx, bet: str = None):
     if final1 == final2 == final3 == EMOJI_1:
         result_embed.set_image(url="https://discordapp.com")
 
-    # លុបអក្សរចាស់ចេញឱ្យអស់ រួចជំនួសដោយ Embed លទ្ធផលស្អាតឥតខ្ចោះ
-    await spin_msg.edit(content=None, embed=result_embed)
+    # កែប្រែផ្ទាំង Embed ទៅជាលទ្ធផលចុងក្រោយ
+    await spin_msg.edit(embed=result_embed)
 
 # ==================== 💼 WORK LOGIC ====================
 async def work_logic(ctx):
