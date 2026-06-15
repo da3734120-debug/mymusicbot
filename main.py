@@ -107,17 +107,15 @@ async def play_slots_logic(ctx, bet: str = None):
     # 🎬 ដំណាក់កាលទី ១: បង្ហាញផ្ទាំង Embed កំពុងវិល និងមានរូបភាព GIF វិលញាប់ៗចុះឡើង
     embed_spinning = discord.Embed(
         title=frame_title,
-        description="🎰 **🎰 ម៉ាស៊ីនកំពុងវិល... កំពុងអ៊ុតគ្រាប់រង្វាន់! 🎰**\n\n┃ 🪙 ប្រាក់ភ្នាល់: ` {bet_amount} `\n┃ 🔄 ស្ថានភាព: rolling... 🔄",
+        description=f"🎰 **🎰 ម៉ាស៊ីនកំពុងវិល... កំពុងអ៊ុតគ្រាប់រង្វាន់! 🎰**\n\n┃ 🪙 ប្រាក់ភ្នាល់: ` {bet_amount} `\n┃ 🔄 ស្ថានភាព: rolling... 🔄",
         color=0xffd700
     )
-    embed_spinning.set_image(url=URL_SPINNING_GIF)  # ដាក់រូប GIF វិលចំកណ្តាល
+    embed_spinning.set_image(url=URL_SPINNING_GIF)
     
     spin_msg = await ctx.send(embed=embed_spinning)
-    
-    # ទុកពេលឱ្យវាបង្ហាញចលនាវិលចំនួន ២ វិនាទី (បងអាចដូរទៅ ១.៥ ឬ ២.៥ វិនាទីបានតាមចិត្ត)
-    await asyncio.sleep(2.0) 
+    await asyncio.sleep(2.0) # ទុកពេលឱ្យវាបង្ហាញចលនាវិលចំនួន ២ វិនាទី
 
-    # ==================== WIN / LOSE CALCULATION ====================
+    # ==================== WIN / LOSE CALCULATION (រៀបដែនបន្ទាត់ត្រឹមត្រូវ) ====================
     final1 = random.choice(SLOTS_EMOJIS)
     final2 = random.choice(SLOTS_EMOJIS)
     final3 = random.choice(SLOTS_EMOJIS)
@@ -126,12 +124,15 @@ async def play_slots_logic(ctx, bet: str = None):
         multiplier = EMOJI_VALUES[final1]
         win_amount = int(bet_amount * multiplier)
         user_balances[user_id] += win_amount
-        result_comment = f"🎉 **JACKPOT! មហាសំណាងឈ្នះរង្វាន់ធំ!**\n💰 ទទួលបាន: +{win_amount} {custom_coin}"elif final1 == final2 or final2 == final3 or final1 == final3:
-        matched = final2 if final2 == final3 or final1 == final2 else final1
+        result_comment = f"🎉 **JACKPOT! មហាសំណាងឈ្នះរង្វាន់ធំ!**\n💰 ទទួលបាន: +{win_amount} {custom_coin}"
+        
+    elif final1 == final2 or final2 == final3 or final1 == final3:matched = final2 if final2 == final3 or final1 == final2 else final1
         win_amount = int(bet_amount * (EMOJI_VALUES[matched] / 2))
-        if win_amount < 1: win_amount = 1
+        if win_amount < 1: 
+            win_amount = 1
         user_balances[user_id] += win_amount
         result_comment = f"💵 **2-Match Combo! (ត្រូវ ២ គ្រាប់)**\n💰 ទទួលបាន: +{win_amount} {custom_coin}"
+        
     else:
         user_balances[user_id] -= bet_amount
         result_comment = f"❌ **You lost... សោកស្តាយផងបង!**\n📉 បាត់បង់: -{bet_amount} {custom_coin}"
@@ -146,11 +147,9 @@ async def play_slots_logic(ctx, bet: str = None):
     
     result_embed = discord.Embed(title=frame_title, description=final_layout, color=0xffd700)
     
-    # ប្រសិនបើត្រូវ Jackpot រង្វាន់ធំ អាចដាក់រូបភាព GIF អបអរសាទរបាន
     if final1 == final2 == final3:
-        result_embed.set_image(url="https://imgur.com") # រូបភាព GIF Jackpot 
+        result_embed.set_image(url="https://imgur.com") # GIF Jackpot
 
-    # កែប្រែផ្ទាំង Embed ទៅជាលទ្ធផលចុងក្រោយ
     await spin_msg.edit(embed=result_embed)
 
 # ==================== 💼 WORK LOGIC ====================
