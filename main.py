@@ -27,12 +27,12 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix="", intents=intents)
 
-# Raw Emoji Code
-OWNER_PHOTO_EMOJI = "<:emoji_2:1515950500208578622>"
+# 🌟 កែប្រែ៖ បានដាក់បញ្ចូលលេខកូដរូបថតថ្មីរបស់អ្នក ទៅក្នុងប្រព័ន្ធហៅរូបភាពដាច់ខាត
+OWNER_PHOTO_EMOJI = "<:photooutput:1515974261599244338>"
 
-# EMOJI VALUE MULTIPLIERS
+# បញ្ជីគុណតម្លៃរង្វាន់
 EMOJI_VALUES = {
-    OWNER_PHOTO_EMOJI: 10,  # JACKPOT GRAND PRIZE (x10)
+    OWNER_PHOTO_EMOJI: 10,  # JACKPOT GRAND PRIZE (រូបថតរបស់អ្នក គុណនឹង ១០)
     '7️⃣': 7,
     '💎': 5,
     '🍊': 4,
@@ -47,7 +47,7 @@ work_cooldown = {}
 
 @bot.event
 async def on_ready():
-    print(f"🎰 {bot.user.name} for ALL SERVERS is Ready!")
+    print(f"🎰 {bot.user.name} for ALL SERVERS is Ready with New Photo!")
 
 # ==================== 🎰 SLOTS COMMAND (Tw [bet]) ====================
 @bot.command(name="Tw")
@@ -106,9 +106,11 @@ async def play_slots(ctx, bet: str = None):
         reward_text = f"📉 Lost: -{bet_amount} {custom_coin}\n💰 Balance: {user_balances[user_id]} {custom_coin}"
         msg_color = 0xe74c3c
 
+    # បង្ហាញលទ្ធផលនៅក្នុងប្រអប់ Embed ស្អាតបាត
     result_embed = discord.Embed(title="🎰 Tw Money Slots Result 🎰", color=msg_color)
     result_embed.description = f"{status_text}\n{reward_text}\n\n====== RESULT ======\n┃ {slot1} ┃ {slot2} ┃ {slot3} ┃"
     
+    # បើឈ្នះ Jackpot រូបថតរបស់អ្នក ឱ្យឡើងរូបថតធំពីក្រោមថែមទៀត
     if slot1 == slot2 == slot3 == OWNER_PHOTO_EMOJI:
         result_embed.set_image(url="https://discordapp.com")
 
@@ -120,7 +122,6 @@ async def work(ctx):
     user_id = ctx.author.id
     custom_coin = "**Tw money**"
     
-    # បន្ថែមពាក្យ await រួចរាល់ដើម្បីបំបាត់ Warning ពណ៌លឿង
     if user_id in work_cooldown and not await bot.is_owner(ctx.author):
         remaining = work_cooldown[user_id] - asyncio.get_event_loop().time()
         if remaining > 0:
