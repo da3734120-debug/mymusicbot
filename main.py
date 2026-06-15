@@ -27,10 +27,10 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix="", intents=intents)
 
-# 🌟 កែប្រែ៖ ប្ដូរមកប្រើទម្រង់ Raw Emoji Code ដែលលែងលោតចេញជាអក្សរលីងវែងៗ
+# Raw Emoji Code
 OWNER_PHOTO_EMOJI = "<:emoji_2:1515950500208578622>"
 
-# បញ្ជីគុណតម្លៃរង្វាន់
+# EMOJI VALUE MULTIPLIERS
 EMOJI_VALUES = {
     OWNER_PHOTO_EMOJI: 10,  # JACKPOT GRAND PRIZE (x10)
     '7️⃣': 7,
@@ -75,13 +75,11 @@ async def play_slots(ctx, bet: str = None):
     if bet_amount > user_balances[user_id]:
         return await ctx.send(f"❌ You don't have enough money! Balance: {user_balances[user_id]} {custom_coin} (Type Twork to earn money)")
 
-    # 🌟 កែប្រែ៖ បង្ហាញលទ្ធផលជាអត្ថបទធម្មតាផ្ញើចេញទៅក្រៅ ដើម្បីបង្ខំឱ្យរូបថតរបស់អ្នកបង្ហាញរូបភាពបានគ្រប់ Server ទាំងអស់
     slot1 = random.choice(SLOTS_EMOJIS)
     slot2 = random.choice(SLOTS_EMOJIS)
     slot3 = random.choice(SLOTS_EMOJIS)
     
     # ==================== WIN / LOSE CALCULATION ====================
-    # Case 1: 3 Match (Jackpot!)
     if slot1 == slot2 == slot3:
         multiplier = EMOJI_VALUES[slot1]
         win_amount = int(bet_amount * multiplier)
@@ -91,7 +89,6 @@ async def play_slots(ctx, bet: str = None):
         reward_text = f"💵 Received: +{win_amount} {custom_coin}\n💰 Total: {user_balances[user_id]} {custom_coin}"
         msg_color = 0x00ff00
         
-    # Case 2: 2 Match
     elif slot1 == slot2 or slot2 == slot3 or slot1 == slot3:
         matched_emoji = slot2 if slot2 == slot3 or slot1 == slot2 else slot1
         multiplier = EMOJI_VALUES[matched_emoji] / 2
@@ -103,21 +100,19 @@ async def play_slots(ctx, bet: str = None):
         reward_text = f"💵 Received: +{win_amount} {custom_coin}\n💰 Total: {user_balances[user_id]} {custom_coin}"
         msg_color = 0x3498db
         
-    # Case 3: Lose
     else:
         user_balances[user_id] -= bet_amount
         status_text = "❌ YOU LOSE! ❌"
         reward_text = f"📉 Lost: -{bet_amount} {custom_coin}\n💰 Balance: {user_balances[user_id]} {custom_coin}"
         msg_color = 0xe74c3c
 
-    # បង្ហាញផ្ទាំងលទ្ធផលចុងក្រោយ
     result_embed = discord.Embed(title="🎰 Tw Money Slots Result 🎰", color=msg_color)
     result_embed.description = f"{status_text}\n{reward_text}\n\n====== RESULT ======\n┃ {slot1} ┃ {slot2} ┃ {slot3} ┃"
     
-    # បើឈ្នះ Jackpot រូបថតរបស់អ្នក ឱ្យឡើងរូបថតធំពីក្រោមថែមទៀត
     if slot1 == slot2 == slot3 == OWNER_PHOTO_EMOJI:
         result_embed.set_image(url="https://discordapp.com")
-        await ctx.send(embed=result_embed)
+
+    await ctx.send(embed=result_embed)
 
 # ==================== 💼 WORK COMMAND (Twork) ====================
 @bot.command(name="Twork")
@@ -125,6 +120,7 @@ async def work(ctx):
     user_id = ctx.author.id
     custom_coin = "**Tw money**"
     
+    # បន្ថែមពាក្យ await រួចរាល់ដើម្បីបំបាត់ Warning ពណ៌លឿង
     if user_id in work_cooldown and not await bot.is_owner(ctx.author):
         remaining = work_cooldown[user_id] - asyncio.get_event_loop().time()
         if remaining > 0:
