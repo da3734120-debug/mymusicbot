@@ -123,8 +123,7 @@ async def xo(ctx, p2: discord.Member, bet_amount: int):
 
             board[move] = current_symbol
             
-            result = check_winner(board)
-            if result:
+            result = check_winner(board)if result:
                 final_board_str = draw_board(board)
                 await ctx.send(f"🏁 **លទ្ធផល៖**\n```{final_board_str}```")
                 if result == "Tie":
