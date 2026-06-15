@@ -11,7 +11,7 @@ app = Flask('')
 
 @app.route('/')
 def home():
-    return "Tw Money Slots Game for All Servers is Online!"
+    return "Tw Money Slots Game with Ultimate Animation is Online!"
 
 def run_web():
     port = int(os.getenv('PORT', 8080))
@@ -47,7 +47,7 @@ work_cooldown = {}
 
 @bot.event
 async def on_ready():
-    print(f"🎰 {bot.user.name} Fast Scrolling Slots is Ready!")
+    print(f"🎰 {bot.user.name} Fast Matrix Animation is Ready!")
 
 # ==================== 🎰 SLOTS COMMAND (Tw [bet]) ====================
 @bot.command(name="Tw")
@@ -80,43 +80,34 @@ async def play_slots(ctx, bet: str = None):
     slot2 = random.choice(SLOTS_EMOJIS)
     slot3 = random.choice(SLOTS_EMOJIS)
 
-    frame_title = "🎐 ┃ SLOTS ┃ 🎐"
+    frame_title = "🎀 ┃ SLOTS ┃ 🎀"
     
-    # 🌟 ១. គំនូរជីវចលរត់ដូររូបភាពក្នុងល្បឿនលឿន (Fast Scrolling Phase)
-    # ប្រព័ន្ធនឹងរត់ដូររូបភាពឆ្លាស់គ្នាយ៉ាងលឿន (asyncio.sleep ទាបបំផុត) ដើម្បីឱ្យឃើញរូបភាពទាំងអស់រត់កាត់
-    for _ in range(4):
-        msg_text = (
-            f"{frame_title}\n"
-            f"**[** ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ {random.choice(SLOTS_EMOJIS)} ] **i'm**\n"
-            f"┃ ⬛ ⬛ ⬛ ┃ bet 🪙 {bet_amount}\n"
-            f"┃ ⬛ ⬛ ⬛ ┃ and spinning... 🎰"
-        )
-        if _ == 0:
-            spin_msg = await ctx.send(msg_text)
-        else:
-            await spin_msg.edit(content=msg_text)
-        await asyncio.sleep(0.2) # ល្បឿនរត់លឿនញាប់
+    # 🌟 បង្កើតសារដំបូងបង្អស់
+    initial_text = (
+        f"{frame_title}\n"
+        f"**[** ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ {random.choice(SLOTS_EMOJIS)} ] **i'm**\n"
+        f"┃ ⬛ ⬛ ⬛ ┃ bet 🪙 {bet_amount}\n"
+        f"┃ ⬛ ⬛ ⬛ ┃ Spinning... 🎰"
+    )
+    spin_msg = await ctx.send(initial_text)
+    
+    # 🌟 គំនូរជីវចលរត់ដូររូបភាពពិតៗក្នុងល្បឿនលឿនបំផុត (Fast Shuffle)
+    # ប្រព័ន្ធនឹងប្តូររូបភាពដេកផ្ដេកញាប់ស្កេកចំនួន ៣ ដង ដើម្បីឱ្យដូចវីដេអូរបស់គេបំផុតតាមដែលអាចធ្វើបាន
+    try:
+        for _ in range(3):
+            await asyncio.sleep(0.15) # ល្បឿនញាប់បំផុតដែល Discord មិនចាប់គាំង
+            shuffle_text = (
+                f"{frame_title}\n"
+                f"**[** ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ {random.choice(SLOTS_EMOJIS)} ] **i'm**\n"
+                f"┃ ⬛ ⬛ ⬛ ┃ bet 🪙 {bet_amount}\n"
+                f"┃ ⬛ ⬛ ⬛ ┃ Spinning... 🎰"
+            )
+            await spin_msg.edit(content=shuffle_text)
+    except:
+        pass # ការពារកុំឱ្យគាំងបើបុក Rate Limit
 
-    # 🌟 ២. ចាប់ហ្វ្រាំងឈប់ចំរូបលទ្ធផលពិតម្តងមួយៗពីឆ្វេងទៅស្តាំ
-    # ប្រអប់ទី ១ ឈប់
-    msg_text = (
-        f"{frame_title}\n"
-        f"**[** ⬛ {slot1} ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ {random.choice(SLOTS_EMOJIS)} ] **i'm**\n"
-        f"┃ ⬛ ⬛ ⬛ ┃ bet 🪙 {bet_amount}\n"
-        f"┃ ⬛ ⬛ ⬛ ┃ and spinning... 🎰"
-    )
-    await spin_msg.edit(content=msg_text)
-    await asyncio.sleep(0.4)
-    
-    # Presប្រអប់ទី ២ ឈប់
-    msg_text = (
-        f"{frame_title}\n"
-        f"**[** ⬛ {slot1} ⬛ {slot2} ⬛ {random.choice(SLOTS_EMOJIS)} ] **i'm**\n"
-        f"┃ ⬛ ⬛ ⬛ ┃ bet 🪙 {bet_amount}\n"
-        f"┃ ⬛ ⬛ ⬛ ┃ and spinning... 🎰"
-    )
-    await spin_msg.edit(content=msg_text)
-    await asyncio.sleep(0.4)
+    # ទុកពេលបន្តិចមុននឹងឈប់ប្រកាសលទ្ធផល
+    await asyncio.sleep(0.3)
 
     # ==================== WIN / LOSE CALCULATION ====================
     if slot1 == slot2 == slot3:
@@ -142,7 +133,7 @@ async def play_slots(ctx, bet: str = None):
         user_balances[user_id] -= bet_amount
         result_comment = f"and won nothing... :c"
 
-    # 🌟 ៣. បង្ហាញផ្ទាំងលទ្ធផលចុងក្រោយតាមរចនាបថជួរដេកផ្ដេក
+    # 🌟 បង្ហាញផ្ទាំងលទ្ធផលចុងក្រោយជាជួរដេកផ្ដេក និងមានផ្ទៃខាងក្រោយ ⬛ ដូចក្នុងវីដេអូ
     final_text = (
         f"{frame_title}\n"
         f"**[** ⬛ {slot1} ⬛ {slot2} ⬛ {slot3} ] **i'm**\n"
@@ -151,7 +142,11 @@ async def play_slots(ctx, bet: str = None):
         f"💰 Current Balance: {user_balances[user_id]} {custom_coin}"
     )
     
-    await spin_msg.edit(content=final_text)
+    result_embed = discord.Embed(description=final_text, color=0xffd700)
+    if slot1 == slot2 == slot3 == OWNER_PHOTO_EMOJI:
+        result_embed.set_image(url="https://discordapp.com")
+
+    await spin_msg.edit(content="", embed=result_embed)
 
 # ==================== 💼 WORK COMMAND (Twork) ====================
 @bot.command(name="Twork")
