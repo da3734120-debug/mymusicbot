@@ -125,7 +125,7 @@ async def work(ctx):
     user_id = ctx.author.id
     custom_coin = "**Tw money**"
     
-    if user_id in work_cooldown and not bot.is_owner(ctx.author):
+    if user_id in work_cooldown and not await bot.is_owner(ctx.author):
         remaining = work_cooldown[user_id] - asyncio.get_event_loop().time()
         if remaining > 0:
             minutes = int(remaining // 60)
