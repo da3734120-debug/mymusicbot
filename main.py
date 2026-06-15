@@ -126,7 +126,8 @@ async def play_slots_logic(ctx, bet: str = None):
         result_comment = f"🎉 **JACKPOT! មហាសំណាងឈ្នះរង្វាន់ធំមហិមា!**\n💰 ទទួលបាន: +{win_amount} {custom_coin}"
     elif final1 == final2 or final2 == final3 or final1 == final3:
         win_amount = int(bet_amount * 2)
-        user_balances[user_id] += win_amountresult_comment = f"💵 **2-Match Combo! (ត្រូវចំទម្រង់ ២ គ្រាប់)**\n💰 ទទួលបាន: +{win_amount} {custom_coin}"
+        user_balances[user_id] += win_amount
+        result_comment = f"💵 **2-Match Combo! (ត្រូវចំទម្រង់ ២ គ្រាប់)**\n💰 ទទួលបាន: +{win_amount} {custom_coin}"
     else:
         user_balances[user_id] -= bet_amount
         result_comment = f"❌ **You lost... សោកស្តាយផងបង លទ្ធផលមិនស៊ីគ្នាទេ!**\n📉 បាត់បង់: -{bet_amount} {custom_coin}"
