@@ -34,6 +34,9 @@ EMOJI_3 = "<:IMG_8343:1516004106412621924>"
 EMOJI_4 = "<:IMG_8342:1516004432612163725>"
 EMOJI_5 = "<:IMG_8350:1516004852130517073>"
 
+# 🔄 ខ្ញុំបានដាក់កូដរូបភាពវិលរបស់បងនៅត្រង់នេះហើយ (ទម្រង់ត្រឹមត្រូវ បើកចំហគ្មានសញ្ញា _ ឬ * បាំងឡើយ)
+YOP_SPINNING = "<a:jago33slotmachine:1516039385332715602>" 
+
 EMOJI_VALUES = {EMOJI_1: 10, EMOJI_2: 7, EMOJI_3: 5, EMOJI_4: 3, EMOJI_5: 2}
 SLOTS_EMOJIS = list(EMOJI_VALUES.keys())
 
@@ -42,7 +45,7 @@ work_cooldown = {}
 
 @bot.event
 async def on_ready():
-    print(f"🎰 {bot.user.name} Slots Game with Pure Custom Shuffling is Ready!")
+    print(f"🎰 {bot.user.name} Slots Game with Pure Video Animation is Ready!")
 
 # ==================== 🛠️ MESSAGE COMMAND HANDLER ====================
 @bot.event
@@ -56,7 +59,7 @@ async def on_message(message):
     if len(args) == 0:
         return
 
-    # ឆែកពាក្យបញ្ជា "Tw" ឱ្យត្រឹមត្រូវ
+    # ឆែកពាក្យបញ្ជា "Tw" ឱ្យស្គាល់ការដាក់ចំនួនលុយភ្នាល់ខាងក្រោយពិតប្រាកដ
     if args[0] == "Tw":
         bet_val = args[1] if len(args) > 1 else None
         ctx = await bot.get_context(message)
@@ -77,7 +80,7 @@ async def on_message(message):
 
     await bot.process_commands(message)
 
-# ==================== 🎰 SLOTS LOGIC (ចលនាវិលចេញតែរូបរបស់អ្នកសុទ្ធសាធ) ====================
+# ==================== 🎰 SLOTS LOGIC (ចលនាវិលឈប់ម្តងមួយកង់ដូចក្នុង VDO) ====================
 async def play_slots_logic(ctx, bet: str = None):
     user_id = ctx.author.id
     custom_coin = "**Tw money**"
@@ -99,64 +102,38 @@ async def play_slots_logic(ctx, bet: str = None):
     if bet_amount <= 0 or bet_amount > user_balances[user_id]:
         return await ctx.send(f"❌ Invalid amount or not enough money! Your balance is {user_balances[user_id]}")
 
-    # ១. កំណត់លទ្ធផលពិតប្រាកដទុកជាមុន
+    # ១. កំណត់លទ្ធផលទុកជាមុន
     final1 = random.choice(SLOTS_EMOJIS)
     final2 = random.choice(SLOTS_EMOJIS)
     final3 = random.choice(SLOTS_EMOJIS)
 
     frame_title = "🎀 ┃ TW SLOTS MACHINE 777 ┃ 🎀"
 
-    # 🎬 ដំណាក់កាលទី ១: រូបភាពទាំង ៣ គ្រាប់ចាប់ផ្តើមប្តូររត់វិលចុះឡើងលឿនៗញាប់ស្មេរ (គ្មានសញ្ញាផ្កាយ ឬប្រអប់ខ្មៅ)
-    # ផ្ញើសារដំបូងបង្អស់ចេញទៅសិន
-    init1 = random.choice(SLOTS_EMOJIS)
-    init2 = random.choice(SLOTS_EMOJIS)
-    init3 = random.choice(SLOTS_EMOJIS)
-    text_init = (
-        f"{frame_title}\n"
-        f"[  {init1}  {init2}  {init3}  ]\n"
-        f"┃          ┃ bet 🪙 {bet_amount}\n"
-        f"┃          ┃ spinning... 🎰"
+    # 🎬 ដំណាក់កាលទី ១: ប្រអប់ទាំង ៣ វិលព្រមគ្នា (Live Animation ដូចវីដេអូគេបេះបិទ)
+    text_1 = (
+        frame_title + "\n" +
+        YOP_SPINNING + "  " + YOP_SPINNING + "  " + YOP_SPINNING + "\n" +
+        "┃ bet 🪙 " + str(bet_amount) + " ┃ spinning... 🎰"
     )
-    spin_msg = await ctx.send(text_init)
+    spin_msg = await ctx.send(text_1)
+    await asyncio.sleep(1.2) # វិលរួមគ្នា ១.២ វិនាទី
 
-    # ម៉ាស៊ីនស្លតវិលរួមគ្នា ប្តូររូបភាពរបស់បងចុះឡើងៗញាប់ស្មេរចំនួន ៥ ដង
-    for _ in range(5):
-        rand1 = random.choice(SLOTS_EMOJIS)
-        rand2 = random.choice(SLOTS_EMOJIS)
-        rand3 = random.choice(SLOTS_EMOJIS)
-        text_shuffle = (
-            f"{frame_title}\n"
-            f"[  {rand1}  {rand2}  {rand3}  ]\n"
-            f"┃          ┃ bet 🪙 {bet_amount}\n"
-            f"┃          ┃ spinning... 🎰"
-        )
-        await spin_msg.edit(content=text_shuffle)
-        await asyncio.sleep(0.2) # ល្បឿនវិលលឿន ០.២ វិនាទីម្តង
+    # 🎬 ដំណាក់កាលទី ២: កង់ទី១ ឈប់គ្រឹបចំរូបពិតរបស់អ្នក (កង់ទី២ និងទី៣ នៅវិលបន្ត)
+    text_2 = (
+        frame_title + "\n" +
+        final1 + "  " + YOP_SPINNING + "  " + YOP_SPINNING + "\n" +
+        "┃ bet 🪙 " + str(bet_amount) + " ┃ rolling... 🔄"
+    )
+    await spin_msg.edit(content=text_2)
+    await asyncio.sleep(0.7) # ទុកពេល ០.៧ វិនាទី
 
-    # 🎬 ដំណាក់កាលទី ២: កង់ទី១ ឈប់ចំរូបពិត (`final1`) ចំណែកកង់ទី២ និងទី៣ នៅបន្តវិលដូររូបញាប់ៗ
-    for _ in range(3):
-        rand2 = random.choice(SLOTS_EMOJIS)
-        rand3 = random.choice(SLOTS_EMOJIS)
-        text_step2 = (
-            f"{frame_title}\n"
-            f"[  {final1}  {rand2}  {rand3}  ]\n"
-            f"┃          ┃ bet 🪙 {bet_amount}\n"
-            f"┃          ┃ rolling... 🔄"
-        )
-        await spin_msg.edit(content=text_step2)
-        await asyncio.sleep(0.2)
-
-    # 🎬 ដំណាក់កាលទី ៣: កង់ទី២ ឈប់ចំរូបពិតមួយទៀត (`final2`) នៅសល់តែកង់ទី៣ មួយគត់ដែលវិលប្តូររូបឱ្យអ៊ុត
-    for _ in range(3):
-        rand3 = random.choice(SLOTS_EMOJIS)
-        text_step3 = (
-            f"{frame_title}\n"
-            f"[  {final1}  {final2}  {rand3}  ]\n"
-            f"┃          ┃ bet 🪙 {bet_amount}\n"
-            f"┃          ┃ stopping soon... 🎰"
-        )
-        await spin_msg.edit(content=text_step3)
-        await asyncio.sleep(0.2)
+    # 🎬 ដំណាក់កាលទី ៣: កង់ទី២ ឈប់គ្រឹបបន្ថែមទៀត (នៅសល់តែកង់ទី៣ មួយគត់ដែលវិលឱ្យអ៊ុត)
+    text_3 = (frame_title + "\n" +
+        final1 + "  " + final2 + "  " + YOP_SPINNING + "\n" +
+        "┃ bet 🪙 " + str(bet_amount) + " ┃ stopping soon... 🎰"
+    )
+    await spin_msg.edit(content=text_3)
+    await asyncio.sleep(0.7) # ទុកពេល ០.៧ វិនាទីអ៊ុតគ្រាប់ចុងក្រោយ
 
     # ==================== WIN / LOSE CALCULATION ====================
     if final1 == final2 == final3:
@@ -175,9 +152,9 @@ async def play_slots_logic(ctx, bet: str = None):
         user_balances[user_id] -= bet_amount
         result_comment = f"❌ **You lost... សោកស្តាយផងបង!**\n📉 បាត់បង់: -{bet_amount} {custom_coin}"
 
-    # 🎬 ដំណាក់កាលចុងក្រោយ៖ ឈប់ទាំងអស់ រួចប្តូរទៅផ្ទាំង Embed ពណ៌មាសយ៉ាងប្រណីតបង្ហាញលទ្ធផលពិតបេះបិទ
+    # 🎬 ដំណាក់កាលចុងក្រោយ៖ ឈប់ទាំងអស់ រួចប្តូរទៅផ្ទាំង Embed ពណ៌មាសយ៉ាងប្រណីតបង្ហាញលទ្ធផលពិត
     final_layout = (
-        f"[  {final1}  {final2}  {final3}  ]\n\n"
+        f"{final1}  {final2}  {final3}\n\n"
         f"{result_comment}\n"
         f"💳 តុល្យភាពលុយសរុប: {user_balances[user_id]} {custom_coin}"
     )
@@ -197,7 +174,7 @@ async def work_logic(ctx):
     current_time = time.time()
 
     if user_id in work_cooldown and work_cooldown[user_id] > current_time:
-        remaining = int(work_cooldown[user_id] - current_time)
+        remaining = int(work_cooldown[work_cooldown] - current_time)
         minutes = remaining // 60
         seconds = remaining % 60
         return await ctx.send(f"⏳ You are tired! Please rest {minutes}m {seconds}s.")
