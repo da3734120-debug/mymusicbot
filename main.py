@@ -130,7 +130,8 @@ async def play_slots_logic(ctx, bet: str = None):
         await asyncio.sleep(0.2)
 
     # 🎬 ដំណាក់កាលទី ២: កង់ទី១ ឈប់គ្រឹបចំរូបពិត (final1) ចំណែកកង់ទី២ និងទី៣ នៅបន្តវិលដូររូបញាប់ៗ
-    for _ in range(3):rand2 = random.choice(SLOTS_EMOJIS)
+    for _ in range(3):
+        rand2 = random.choice(SLOTS_EMOJIS)
         rand3 = random.choice(SLOTS_EMOJIS)
         text_step2 = (
             f"{frame_title}\n"
