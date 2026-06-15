@@ -11,7 +11,7 @@ app = Flask('')
 
 @app.route('/')
 def home():
-    return "Tw Money Slots Game with Ultimate Animation is Online!"
+    return "Tw Money Slots Game with Scrolling Animation is Online!"
 
 def run_web():
     port = int(os.getenv('PORT', 8080))
@@ -47,7 +47,7 @@ work_cooldown = {}
 
 @bot.event
 async def on_ready():
-    print(f"🎰 {bot.user.name} Fast Matrix Animation is Ready!")
+    print(f"🎰 {bot.user.name} Scrolling Animation Edition is Ready!")
 
 # ==================== 🎰 SLOTS COMMAND (Tw [bet]) ====================
 @bot.command(name="Tw")
@@ -82,32 +82,34 @@ async def play_slots(ctx, bet: str = None):
 
     frame_title = "🎀 ┃ SLOTS ┃ 🎀"
     
-    # 🌟 បង្កើតសារដំបូងបង្អស់
-    initial_text = (
-        f"{frame_title}\n"
-        f"**[** ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ {random.choice(SLOTS_EMOJIS)} ] **i'm**\n"
-        f"┃ ⬛ ⬛ ⬛ ┃ bet 🪙 {bet_amount}\n"
-        f"┃ ⬛ ⬛ ⬛ ┃ Spinning... 🎰"
-    )
-    spin_msg = await ctx.send(initial_text)
-    
-    # 🌟 គំនូរជីវចលរត់ដូររូបភាពពិតៗក្នុងល្បឿនលឿនបំផុត (Fast Shuffle)
-    # ប្រព័ន្ធនឹងប្តូររូបភាពដេកផ្ដេកញាប់ស្កេកចំនួន ៣ ដង ដើម្បីឱ្យដូចវីដេអូរបស់គេបំផុតតាមដែលអាចធ្វើបាន
+    # 🌟 ប្រព័ន្ធគំនូរជីវចលរត់រំកិលពីលើចុះក្រោម (Scrolling Dynamic Effect)
+    # យើងប្រើការបង្កើតជួរដេកដេញគ្នា ចំនួន ៣ បន្ទាត់ដើម្បីឱ្យភ្នែកមើលឃើញរូបភាពរត់ធ្លាក់ចុះមកក្រោមលឿនញាប់
     try:
-        for _ in range(3):
-            await asyncio.sleep(0.15) # ល្បឿនញាប់បំផុតដែល Discord មិនចាប់គាំង
+        for i in range(3):
+            await asyncio.sleep(0.12)  # ល្បឿនលឿនបំផុតដែល Discord មិនបង្កឱ្យគាំង
+            
+            # ចាប់ផ្ដើមរៀបចំជួរដេកឱ្យរត់ដេញគ្នា
+            top_row = f"┃ ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ ┃  ▼ *rolling*"
+            mid_row = f"**[** ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ ]  **i'm**"
+            bot_row = f"┃ ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ ┃  ▲ *scrolling*"
+            
             shuffle_text = (
                 f"{frame_title}\n"
-                f"**[** ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ {random.choice(SLOTS_EMOJIS)} ] **i'm**\n"
-                f"┃ ⬛ ⬛ ⬛ ┃ bet 🪙 {bet_amount}\n"
-                f"┃ ⬛ ⬛ ⬛ ┃ Spinning... 🎰"
+                f"{top_row}\n"
+                f"{mid_row}\n"
+                f"{bot_row}\n"
+                f"┃          ┃ bet 🪙 {bet_amount}\n"
+                f"┃          ┃ spinning fast... 🎰"
             )
-            await spin_msg.edit(content=shuffle_text)
+            
+            if i == 0:
+                spin_msg = await ctx.send(shuffle_text)
+            else:
+                await spin_msg.edit(content=shuffle_text)
     except:
-        pass # ការពារកុំឱ្យគាំងបើបុក Rate Limit
+        pass
 
-    # ទុកពេលបន្តិចមុននឹងឈប់ប្រកាសលទ្ធផល
-    await asyncio.sleep(0.3)
+    await asyncio.sleep(0.2)
 
     # ==================== WIN / LOSE CALCULATION ====================
     if slot1 == slot2 == slot3:
@@ -116,33 +118,36 @@ async def play_slots(ctx, bet: str = None):
         user_balances[user_id] += win_amount
         
         if slot1 == OWNER_PHOTO_EMOJI:
-            result_comment = f"and won the SUPER JACKPOT! +{win_amount} {custom_coin} 👑"
+            result_comment = f"**and won the SUPER JACKPOT!** +{win_amount} {custom_coin} 👑"
         else:
-            result_comment = f"and won the JACKPOT! +{win_amount} {custom_coin} 🎉"
-        
-    elif slot1 == slot2 or slot2 == slot3 or slot1 == slot3:
+            result_comment = f"**and won the JACKPOT!** +{win_amount} {custom_coin} 🎉"
+            elif slot1 == slot2 or slot2 == slot3 or slot1 == slot3:
         matched_emoji = slot2 if slot2 == slot3 or slot1 == slot2 else slot1
         multiplier = EMOJI_VALUES[matched_emoji] / 2
         win_amount = int(bet_amount * multiplier)
         if win_amount < 1: win_amount = 1
         
         user_balances[user_id] += win_amount
-        result_comment = f"and won a 2-Match Combo! +{win_amount} {custom_coin} 💵"
+        result_comment = f"**and won a 2-Match Combo!** +{win_amount} {custom_coin} 💵"
         
     else:
         user_balances[user_id] -= bet_amount
-        result_comment = f"and won nothing... :c"
+        result_comment = f"**and won nothing... :c** (Lost -{bet_amount} {custom_coin})"
 
-    # 🌟 បង្ហាញផ្ទាំងលទ្ធផលចុងក្រោយជាជួរដេកផ្ដេក និងមានផ្ទៃខាងក្រោយ ⬛ ដូចក្នុងវីដេអូ
+    # 🌟 បង្ហាញផ្ទាំងលទ្ធផលចុងក្រោយ៖ ជួរកណ្ដាលឈប់ចំរូបពិតប្រាកដ រួចបង្ហាញទឹកប្រាក់
     final_text = (
         f"{frame_title}\n"
-        f"**[** ⬛ {slot1} ⬛ {slot2} ⬛ {slot3} ] **i'm**\n"
-        f"┃ ⬛ ⬛ ⬛ ┃ bet 🪙 {bet_amount}\n"
-        f"┃ ⬛ ⬛ ⬛ ┃ {result_comment}\n"
+        f"┃ ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ ┃  ▼ *stopped*\n"
+        f"**[** ⬛ {slot1} ⬛ {slot2} ⬛ {slot3} ⬛ ]  **i'm**\n"
+        f"┃ ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ {random.choice(SLOTS_EMOJIS)} ⬛ ┃  ▲ *stopped*\n"
+        f"┃          ┃ bet 🪙 {bet_amount}\n"
+        f"┃          ┃ {result_comment}\n"
         f"💰 Current Balance: {user_balances[user_id]} {custom_coin}"
     )
     
     result_embed = discord.Embed(description=final_text, color=0xffd700)
+    
+    # បើឈ្នះ Jackpot រូបថតរបស់អ្នក ឱ្យឡើងរូបថតធំពីក្រោមថែមទៀត
     if slot1 == slot2 == slot3 == OWNER_PHOTO_EMOJI:
         result_embed.set_image(url="https://discordapp.com")
 
@@ -168,10 +173,10 @@ async def work(ctx):
     user_balances[user_id] += earnings
     
     jobs = [
-        "👷 You worked hard at a construction site",
-        "👨‍🍳 You worked as a busy barista at a coffee shop",
-        "🚗 You drove a delivery truck all day",
-        "💻 You fixed system bugs as a programmer"
+        "Constructed a new building site 👷",
+        "Served fresh coffee as a barista 👨‍🍳",
+        "Delivered packages all day long 🚗",
+        "Fixed a lot of website system bugs 💻"
     ]
     random_job = random.choice(jobs)
 
