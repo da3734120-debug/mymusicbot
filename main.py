@@ -42,20 +42,22 @@ work_cooldown = {}
 async def on_ready():
     print(f"🎰 {bot.user.name} with True Rolling Down Animation is Ready!")
 
-# ==================== 🛠️ MESSAGE COMMAND HANDLER ====================
+# ==================== 🛠️ CUSTOM MESSAGE COMMAND HANDLER ====================
 @bot.event
 async def on_message(message):
     if message.author.bot:
         return
+
     content = message.content.strip()
+    args = content.split()
     
-    if content.startswith("Tw ") or content == "Tw" or content.lower() == "tw all":
-        args = content.split()
-        bet_val = args if len(args) > 1 else None
+    if len(args) > 0 and args[0] == "Tw":
+        # ជួសជុលបញ្ហាផ្ញើតម្លៃ bet ឱ្យទៅជាអក្សរធម្មតា (String) មិនមែនជា List ឡើយ
+        bet_val = args[1] if len(args) > 1 else None
         ctx = await bot.get_context(message)
         await play_slots_logic(ctx, bet_val)
         return
-        
+
     if content == "Twork":
         ctx = await bot.get_context(message)
         await work_logic(ctx)
@@ -74,7 +76,7 @@ async def play_slots_logic(ctx, bet: str = None):
     custom_coin = "**Tw money**"
     
     if user_id not in user_balances:
-        user_balances[user_id] = 0
+        user_balances[user_id] = 1000 # ថែមលុយហ្វ្រី ១០០០ សម្រាប់អ្នកលេងដំបូងការពារកុំឱ្យ Balance ស្មើ ០
         
     if bet is None:
         return await ctx.send(f"❌ Please enter a bet amount! Example: Tw 50 (Balance: {user_balances[user_id]} {custom_coin})")
@@ -85,10 +87,13 @@ async def play_slots_logic(ctx, bet: str = None):
         try:
             bet_amount = int(bet)
         except ValueError:
-            return await ctx.send("❌ Bet amount must be a number!")
+            return await ctx.send("❌ Bet amount must be a number or 'all'!")
             
-    if bet_amount <= 0 or bet_amount > user_balances[user_id]:
-        return await ctx.send(f"❌ Invalid amount or not enough money! Balance: {user_balances[user_id]} {custom_coin}")
+    if bet_amount <= 0:
+        return await ctx.send("❌ Bet amount must be greater than 0!")
+        
+    if bet_amount > user_balances[user_id]:
+        return await ctx.send(f"❌ You don't have enough money! Balance: {user_balances[user_id]} {custom_coin}")
 
     # ១. កំណត់លទ្ធផលឈ្នះចាញ់ពិតប្រាកដទុកជាមុន
     final1 = random.choice(SLOTS_EMOJIS)
@@ -97,46 +102,44 @@ async def play_slots_logic(ctx, bet: str = None):
 
     frame_title = "🎀 ┃ SLOTS MACHINE ┃ 🎀"
 
-    # ២. បង្កើតទម្រង់ទូហ្គេម ៣ ជួរ (ជួរលើ, ជួរកណ្តាល, ជួរក្រោម) ដោយចាប់ផ្តើមពីរូបភាពចៃដន្យ
-    row_top = [random.choice(SLOTS_EMOJIS) for _ in range(3)]
-    row_mid = [random.choice(SLOTS_EMOJIS) for _ in range(3)]
-    row_bot = [random.choice(SLOTS_EMOJIS) for _ in range(3)]
+    # ២. បង្កើតចលនា Matrix ៣ ជួរចាប់ផ្ដើមពីរូបចៃដន្យ
+    top1, top2, top3 = random.choice(SLOTS_EMOJIS), random.choice(SLOTS_EMOJIS), random.choice(SLOTS_EMOJIS)
+    mid1, mid2, mid3 = random.choice(SLOTS_EMOJIS), random.choice(SLOTS_EMOJIS), random.choice(SLOTS_EMOJIS)
+    bot1, bot2, bot3 = random.choice(SLOTS_EMOJIS), random.choice(SLOTS_EMOJIS), random.choice(SLOTS_EMOJIS)
 
-    # 🎬 ផ្ដើមផ្ញើសារដំបូង (Frame ទី ១)
     initial_text = (
         f"{frame_title}\n"
         f" ┌───⚙️───⚙️───⚙️───┐\n"
-        f"  [ ⬛ {row_top[0]} ⬛ {row_top[1]} ⬛ {row_top[2]} ⬛ ]\n"
-        f"▶ [ ⬛ {row_mid[0]} ⬛ {row_mid[1]} ⬛ {row_mid[2]} ⬛ ] 🌟\n"
-        f"  [ ⬛ {row_bot[0]} ⬛ {row_bot[1]} ⬛ {row_bot[2]} ⬛ ]\n"
+        f"  [ ⬛ {top1} ⬛ {top2} ⬛ {top3} ⬛ ]\n"
+        f"▶ [ ⬛ {mid1} ⬛ {mid2} ⬛ {mid3} ⬛ ] 🌟\n"
+        f"  [ ⬛ {bot1} ⬛ {bot2} ⬛ {bot3} ⬛ ]\n"
         f" └───🎰───🎰───🎰───┘\n"
         f"┃ bet 🪙 {bet_amount} ┃ spinning... 🎰"
     )
     spin_msg = await ctx.send(initial_text)
     await asyncio.sleep(0.35)
 
-    # 🎬 ធ្វើការដេញកូដទម្លាក់រូបភាពចុះក្រោម (Frame ទី ២ ដល់ ទី ៤)
+    # 🎬 ចលនារុញទម្លាក់ចុះក្រោមចំនួន ៣ ជុំ
     for i in range(3):
-        # ទាញរូបភាពជួរក្រោមចោល រួចយកជួរកណ្តាលមកជំនួសជួរក្រោម ហើយជួរលើមកជំនួសជួរកណ្តាល (ចលនាធ្លាក់ចុះពិតៗ)
-        row_bot = row_mid.copy()
-        row_mid = row_top.copy()
-        # ប្រសិនបើជាជុំចុងក្រោយ គឺត្រូវរុញលទ្ធផលពិត (Final) ឱ្យរត់ចូលមកពីជួរលើបង្អស់
+        bot1, bot2, bot3 = mid1, mid2, mid3
+        mid1, mid2, mid3 = top1, top2, top3
+        
         if i == 2:
-            row_top = [final1, final2, final3]
+            top1, top2, top3 = final1, final2, final3
         else:
-            row_top = [random.choice(SLOTS_EMOJIS) for _ in range(3)]
+            top1, top2, top3 = random.choice(SLOTS_EMOJIS), random.choice(SLOTS_EMOJIS), random.choice(SLOTS_EMOJIS)
 
         rolling_text = (
             f"{frame_title}\n"
             f" ┌───⚙️───⚙️───⚙️───┐\n"
-            f"  [ ⬛ {row_top[0]} ⬛ {row_top[1]} ⬛ {row_top[2]} ⬛ ] ⬇️\n"
-            f"▶ [ ⬛ {row_mid[0]} ⬛ {row_mid[1]} ⬛ {row_mid[2]} ⬛ ] 🌟\n"
-            f"  [ ⬛ {row_bot[0]} ⬛ {row_bot[1]} ⬛ {row_bot[2]} ⬛ ] ⬇️\n"
+            f"  [ ⬛ {top1} ⬛ {top2} ⬛ {top3} ⬛ ] ⬇️\n"
+            f"▶ [ ⬛ {mid1} ⬛ {mid2} ⬛ {mid3} ⬛ ] 🌟\n"
+            f"  [ ⬛ {bot1} ⬛ {bot2} ⬛ {bot3} ⬛ ] ⬇️\n"
             f" └───🎰───🎰───🎰───┘\n"
             f"┃ bet 🪙 {bet_amount} ┃ rolling down... 🔄"
         )
         await spin_msg.edit(content=rolling_text)
-        await asyncio.sleep(0.35) # ល្បឿនលឿនដែល Discord អនុញ្ញាត
+        await asyncio.sleep(0.35)
 
     # ==================== WIN / LOSE CALCULATION ====================
     if final1 == final2 == final3:
@@ -154,17 +157,17 @@ async def play_slots_logic(ctx, bet: str = None):
         user_balances[user_id] -= bet_amount
         result_comment = f"❌ and won nothing... :c (Lost -{bet_amount} {custom_coin})"
 
-    # 🎬 ជុំចុងក្រោយបង្អស់: រុញលទ្ធផលពិត (Final) ចុះមកចំជួរកណ្តាល (ជួរឈ្នះផ្លូវការ) បេះបិទ
-    row_bot = row_mid.copy()
-    row_mid = [final1, final2, final3]
-    row_top = [random.choice(SLOTS_EMOJIS) for _ in range(3)]
+    # 🎬 ជុំចុងក្រោយបង្អស់: រុញលទ្ធផលពិត (Final) មកចំជួរកណ្តាលផ្លូវការ
+    bot1, bot2, bot3 = mid1, mid2, mid3
+    mid1, mid2, mid3 = final1, final2, final3
+    top1, top2, top3 = random.choice(SLOTS_EMOJIS), random.choice(SLOTS_EMOJIS), random.choice(SLOTS_EMOJIS)
 
     final_layout = (
         f"{frame_title}\n"
         f" ┌───⚙️───⚙️───⚙️───┐\n"
-        f"  [ ⬛ {row_top[0]} ⬛ {row_top[1]} ⬛ {row_top[2]} ⬛ ]\n"
-        f"▶ [ ⬛ {row_mid[0]} ⬛ {row_mid[1]} ⬛ {row_mid[2]} ⬛ ] 👑\n"
-        f"  [ ⬛ {row_bot[0]} ⬛ {row_bot[1]} ⬛ {row_bot[2]} ⬛ ]\n"
+        f"  [ ⬛ {top1} ⬛ {top2} ⬛ {top3} ⬛ ]\n"
+        f"▶ [ ⬛ {mid1} ⬛ {mid2} ⬛ {mid3} ⬛ ] 👑\n"
+        f"  [ ⬛ {bot1} ⬛ {bot2} ⬛ {bot3} ⬛ ]\n"
         f" └───🎰───🎰───🎰───┘\n"
         f"┃ {result_comment}\n"
         f"💰 Current Balance: {user_balances[user_id]} {custom_coin}"
