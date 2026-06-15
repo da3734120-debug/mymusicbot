@@ -1,122 +1,161 @@
 import discord
 from discord.ext import commands
-import random
-import os
 import asyncio
-import time
+import os
 from flask import Flask
 from threading import Thread
 
-# ==================== WEB SERVER FOR KEEP ALIVE ====================
+# --- ផ្នែកទី ១៖ បង្កើត Web Server សម្រាប់ការពារកុំឱ្យ Render ងងុយដេក (Keep Alive) ---
 app = Flask('')
 
 @app.route('/')
 def home():
-    return "Tw Money Slots Game is Online!"
+    return "Bot របស់អ្នកកំពុងដំណើរការ ២៤ ម៉ោង!"
 
-def run_web():
-    port = int(os.getenv('PORT', 8080))
+def run_web_server():
+    # ដំណើរការនៅលើ Port 10000 ឬ Port ដែល Render ផ្ដល់ឱ្យ
+    port = int(os.getenv("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
 
 def keep_alive():
-    t = Thread(target=run_web)
+    t = Thread(target=run_web_server)
     t.start()
 
-# ==================== SETUP DISCORD BOT ====================
+# --- ផ្នែកទី ២៖ កូដហ្គេម XO ភ្នាល់លុយ ---
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# 🌟 គ្រាប់រង្វាន់ទាំង ៥
-SLOTS_EMOJIS = ["💎", "👑", "🔥", "🍀", "🪙"]
-
-# 🎬 ដាក់ Direct Link របស់ GIF នៅទីនេះ
-URL_SPINNING_GIF = "https://media1.tenor.com/m/V1-T65pT7bEAAAAd/luck-777.gif"
-
 user_balances = {}
-work_cooldown = {} 
+
+def draw_board(board):
+    lines = []
+    for i in range(0, 9, 3):
+        lines.append(f"{board[i]} | {board[i+1]} | {board[i+2]}")
+    return "\n---------\n".join(lines)
+
+def check_winner(b):
+    win_states = [[0,1,2], [3,4,5], [6,7,8], [0,3,6], [1,4,7], [2,5,8], [0,4,8], [2,4,6]]
+    for state in win_states:
+        if b[state[0]] == b[state[1]] == b[state[2]] and b[state[0]] != "⬜":
+            return b[state[0]]
+    if "⬜" not in b:
+        return "Tie"
+    return None
 
 @bot.event
 async def on_ready():
-    print(f"🎰 {bot.user.name} Slots Game is Ready!")
-
-# ==================== 🎰 COMMANDS ====================
+    print(f'Bot XO ដំណើរការដោយជោគជ័យ៖ {bot.user.name}')
 
 @bot.command()
-async def Tw(ctx, bet: str):
-    user_id = ctx.author.id
-    custom_coin = "**Tw money**"
-    
-    if user_id not in user_balances:
-        user_balances[user_id] = 1000
-        
-    # ការគណនាចំនួនភ្នាល់
-    if bet.lower() == "all":
-        bet_amount = user_balances[user_id]
-    else:
-        try:
-            bet_amount = int(bet)
-        except ValueError:
-            return await ctx.send("❌ Bet amount must be a number!")
+async def wallet(ctx):
+    balance = user_balances.get(ctx.author.id, 100)
+    user_balances[ctx.author.id] = balance
+    await ctx.send(f"💰 {ctx.author.mention} មានលុយ៖ {balance} កាក់")
+
+@bot.command()
+async def xo(ctx, p2: discord.Member, bet_amount: int):
+    p1 = ctx.author
+    if p1 == p2:
+        await ctx.send("❌ អ្នកមិនអាចលេងជាមួយខ្លួនឯងបានទេ!")
+        return
+    if bet_amount <= 0:
+        await ctx.send("❌ ចំនួនលុយភ្នាល់ត្រូវតែធំជាង ០!")
+        return
+
+    p1_bal = user_balances.get(p1.id, 100)
+    p2_bal = user_balances.get(p2.id, 100)
+    user_balances[p1.id], user_balances[p2.id] = p1_bal, p2_bal
+
+    if p1_bal < bet_amount or p2_bal < bet_amount:
+        await ctx.send("❌ មានភាគីម្ខាងមិនមានលុយគ្រប់គ្រាន់សម្រាប់ភ្នាល់ទេ!")
+        return
+
+    await ctx.send(f"🎮 {p2.mention}! {p1.mention} បបួលលេង XO ភ្នាល់ {bet_amount} កាក់!\nវាយ !accept ដើម្បីព្រម ឬ !decline ដើម្បីបដិសេធ។")
+
+    def check_accept(m):
+        return m.author == p2 and m.channel == ctx.channel and m.content.lower() in ['!accept', '!decline']
+
+    try:
+        response = await bot.wait_for('message', check=check_accept, timeout=60.0)
+    except asyncio.TimeoutError:
+        await ctx.send("⏰ ហ្គេមត្រូវបានលុបចោលដោយសារគ្មានការឆ្លើយតប។")
+        return
+
+    if response.content.lower() == '!decline':
+        await ctx.send(f"❌ {p2.mention} បានបដិសេធ។")
+        return
+
+    user_balances[p1.id] -= bet_amount
+    user_balances[p2.id] -= bet_amount
+    total_pot = bet_amount * 2
+
+    match_number = 1
+    p1_symbol, p2_symbol = "❌", "⭕"
+    starting_player = p1 
+
+    while True:
+        await ctx.send(f"⚔️ ចាប់ផ្តើមប្រកួតទី {match_number}! (លុយក្នុងក្អមសរុប៖ {total_pot} កាក់)")
+        board = ["⬜"] * 9
+        turn = starting_player
+        game_ended_in_tie = False
+        winner = None
+
+        while True:
+            current_board_str = draw_board(board)
+            current_symbol = p1_symbol if turn == p1 else p2_symbol
+            await ctx.send(f"វេនរបស់ {turn.mention} ({current_symbol}):\n```{current_board_str}```")
+
+            def check_move(m):
+                return m.author == turn and m.channel == ctx.channel and m.content.isdigit() and 1 <= int(m.content) <= 9
+
+            try:
+                move_msg = await bot.wait_for('message', check=check_move, timeout=45.0)
+                move = int(move_msg.content) - 1
+            except asyncio.TimeoutError:
+                await ctx.send(f"⏰ {turn.mention} ហួសពេលកំណត់! ត្រូវបានកាត់សេចក្តីឱ្យចាញ់។")
+                winner = p2 if turn == p1 else p1
+                break
+
+            if board[move] != "⬜":
+                await ctx.send("❌ ឡូផ្លូវនោះមានគេដាក់រួចហើយ! ជ្រើសរើសលេខផ្សេង។")
+                continue
+
+            board[move] = current_symbol
             
-    if bet_amount <= 0 or bet_amount > user_balances[user_id]:
-        return await ctx.send(f"❌ Invalid amount! Your balance is {user_balances[user_id]}")
+            result = check_winner(board)
+            if result:
+                final_board_str = draw_board(board)
+                await ctx.send(f"🏁 **លទ្ធផល៖**\n```{final_board_str}```")
+                if result == "Tie":
+                    game_ended_in_tie = True
+                else:
+                    winner = p1 if result == p1_symbol else p2
+                break
 
-    # 🎬 ផ្ញើផ្ទាំង Embed កំពុងវិល
-    embed_spinning = discord.Embed(
-        title="🎀 ┃ TW SLOTS MACHINE 777 ┃ 🎀",
-        description=f"🎰 ម៉ាស៊ីនកំពុងវិល... កំពុងអ៊ុតរង្វាន់!\n\n┃ 🪙 ប្រាក់ភ្នាល់: {bet_amount} {custom_coin}",
-        color=0xffd700
-    )
-    embed_spinning.set_image(url=URL_SPINNING_GIF)
-    spin_msg = await ctx.send(embed=embed_spinning)
-    
-    await asyncio.sleep(2) 
+            turn = p2 if turn == p1 else p1
 
-    # ==================== WIN / LOSE CALCULATION ====================
-    final1, final2, final3 = random.choices(SLOTS_EMOJIS, k=3)
+        if game_ended_in_tie:
+            await ctx.send("🤝 **ស្មើគ្នាហើយ! ហ្គេមនឹងចាប់ផ្តើមឡើងវិញភ្លាមៗ...**")
+            match_number += 1
+            starting_player = p2 if starting_player == p1 else p1
+            await asyncio.sleep(2)
+            continue
 
-    if final1 == final2 == final3:
-        win_amount = int(bet_amount * 10)
-        user_balances[user_id] += win_amount
-        result_comment = f"🎉 **JACKPOT! មហាសំណាងឈ្នះរង្វាន់ធំ!**\n💰 ទទួលបាន: +{win_amount} {custom_coin}"
-    elif final1 == final2 or final2 == final3 or final1 == final3:
-        win_amount = int(bet_amount * 2)
-        user_balances[user_id] += win_amount
-        result_comment = f"💵 **2-Match Combo!**\n💰 ទទួលបាន: +{win_amount} {custom_coin}"
+        break
+
+    user_balances[winner.id] += total_pot
+    loser = p2 if winner == p1 else p1
+
+    await ctx.send(f"🎉 អបអរសាទរ! {winner.mention} ឈ្នះដាច់ជាស្ថាពរ និងទទួលបានកាក់ភ្នាល់ទាំងអស់សរុប {total_pot} កាក់! (សមតុល្យ៖ {user_balances[winner.id]})")
+    await ctx.send(f"💸 {loser.mention} បានចាញ់ការប្រកួត (សមតុល្យនៅសល់៖ {user_balances[loser.id]})")
+
+# --- ផ្នែកទី ៣៖ ដកស្រង់ Token ពី Render Environment Variable ហើយដំណើរការ Bot ---
+if name == "__main__":
+    keep_alive() # បើក Web Server ជំនួយ
+    # ទាញយក Token ពី Environment Variable ដែលមានឈ្មោះថា DISCORD_TOKEN នៅលើ Render
+    token = os.getenv('DISCORD_TOKEN') 
+    if token:
+        bot.run(token)
     else:
-        user_balances[user_id] -= bet_amount
-        result_comment = f"❌ **You lost... សោកស្តាយផង!**\n📉 បាត់បង់: -{bet_amount} {custom_coin}"
-
-    # 🎬 បង្ហាញលទ្ធផល
-    final_layout = (
-        f"**[ 🎰 លទ្ធផលម៉ាស៊ីនស្លត ]**\n"
-        f"➡️ ┃ {final1} ┃ {final2} ┃ {final3} ┃ ⬅️\n\n"
-        f"{result_comment}\n"
-        f"💳 តុល្យភាពសរុប: {user_balances[user_id]} {custom_coin}"
-    )
-    
-    result_embed = discord.Embed(title="🎀 ┃ TW SLOTS RESULT ┃ 🎀", description=final_layout, color=0xffd700)
-    await spin_msg.edit(embed=result_embed)
-
-@bot.command()
-async def Twork(ctx):
-    user_id = ctx.author.id
-    current_time = time.time()
-    if user_id in work_cooldown and work_cooldown[user_id] > current_time:
-        return await ctx.send("⏳ You are tired! Please rest.")
-    
-    earnings = random.randint(50, 200)
-    user_balances[user_id] = user_balances.get(user_id, 1000) + earnings
-    work_cooldown[user_id] = current_time + 300
-    await ctx.send(f"💼 Worked hard and earned +{earnings} Tw money!")
-
-@bot.command()
-async def Twbal(ctx):
-    user_id = ctx.author.id
-    await ctx.send(f"💰 Balance: {user_balances.get(user_id, 1000)} **Tw money**")
-
-keep_alive()
-TOKEN = os.getenv('DISCORD_TOKEN')
-if TOKEN: 
-    bot.run(TOKEN)
+        print("❌ កំហុស៖ រកមិនឃើញ DISCORD_TOKEN នៅក្នុង Render បរិស្ថានឡើយ!")
