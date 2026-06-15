@@ -34,18 +34,18 @@ EMOJI_3 = "<:IMG_8343:1516004106412621924>"
 EMOJI_4 = "<:IMG_8342:1516004432612163725>"
 EMOJI_5 = "<:IMG_8350:1516004852130517073>"
 
-# 🔄 រូប GIF វិល 777 របស់អ្នក
-SPINNING = "<a:jago33slotmachine:1516039385332715602>" 
-
 EMOJI_VALUES = {EMOJI_1: 10, EMOJI_2: 7, EMOJI_3: 5, EMOJI_4: 3, EMOJI_5: 2}
 SLOTS_EMOJIS = list(EMOJI_VALUES.keys())
+
+# 🔥 ដំណោះស្រាយដាច់ស្រឡះ៖ ប្រើលីង GIF ម៉ាស៊ីនស្លតវិលផ្លូវការពី Discord ធានាមិនចេញប្រអប់ទទេទៀតឡើយ
+URL_SPINNING_GIF = "https://discordapp.net" 
 
 user_balances = {}
 work_cooldown = {} 
 
 @bot.event
 async def on_ready():
-    print(f"🎰 {bot.user.name} Slots Game with Pure Animation is Ready!")
+    print(f"🎰 {bot.user.name} Slots Game is Ready!")
 
 # ==================== 🛠️ MESSAGE COMMAND HANDLER ====================
 @bot.event
@@ -78,7 +78,7 @@ async def on_message(message):
 
     await bot.process_commands(message)
 
-# ==================== 🎰 SLOTS LOGIC (ប្រព័ន្ធផ្ញើសារថ្មីដើម្បីបង្ខំឱ្យលោតចលនា) ====================
+# ==================== 🎰 SLOTS LOGIC ====================
 async def play_slots_logic(ctx, bet: str = None):
     user_id = ctx.author.id
     custom_coin = "**Tw money**"
@@ -102,16 +102,16 @@ async def play_slots_logic(ctx, bet: str = None):
 
     frame_title = "🎀 ┃ TW SLOTS MACHINE 777 ┃ 🎀"
 
-    # 🎬 ដំណាក់កាលទី ១: ផ្ញើសារថ្មីសុទ្ធសាធ បង្ហាញរូបភាពវិលទាំង ៣ គ្រាប់របស់បង (វិធីនេះធានាឃើញវិល ១០០%)
-    text_spinning = (
-        frame_title + "\n" +
-        SPINNING + "    " + SPINNING + "    " + SPINNING + "\n" +
-        "┃ bet 🪙 " + str(bet_amount) + " ┃ spinning... 🎰"
+    # 🎬 ដំណាក់កាលទី ១: ផ្ញើសារទី១ បង្ហាញផ្ទាំង Embed ពណ៌មាស និងផ្ទុករូបភាព GIF វិលញាប់ៗចុះឡើង (ធានាឃើញវិល ១00%)
+    embed_spinning = discord.Embed(
+        title=frame_title,
+        description=f"🎰 ម៉ាស៊ីនកំពុងវិលយ៉ាងញាប់... កំពុងអ៊ុតរកគ្រាប់រង្វាន់! 🎰\n\n┃ 🪙 ប្រាក់ភ្នាល់: {bet_amount} {custom_coin}\n┃ 🔄 ស្ថានភាព: rolling... 🔄",
+        color=0xffd700
     )
-    spin_msg = await ctx.send(text_spinning)
+    embed_spinning.set_image(url=URL_SPINNING_GIF)
     
-    # ទុកពេលឱ្យម៉ាស៊ីនរត់វិលកញ្ជ្រោលចំនួន ២.០ វិនាទីពេញ ដើម្បីឱ្យអ្នកលេងមើលឃើញចលនា
-    await asyncio.sleep(2.0) 
+    spin_msg = await ctx.send(embed=embed_spinning)
+    await asyncio.sleep(2.5) # ទុកពេលឱ្យរូប GIF វិលចំនួន ២.៥ វិនាទី
 
     # ==================== WIN / LOSE CALCULATION ====================
     final1 = random.choice(SLOTS_EMOJIS)
@@ -122,35 +122,35 @@ async def play_slots_logic(ctx, bet: str = None):
         multiplier = EMOJI_VALUES[final1]
         win_amount = int(bet_amount * multiplier)
         user_balances[user_id] += win_amount
-        result_comment = f"🎉 **JACKPOT! មហាសំណាងឈ្នះរង្វាន់ធំ!**\n💰 ទទួលបាន: +{win_amount} {custom_coin}"
+        result_comment = f"🎉 **JACKPOT! មហាសំណាងឈ្នះរង្វាន់ធំមហិមា!**\n💰 ទទួលបាន: +{win_amount} {custom_coin}"
     elif final1 == final2 or final2 == final3 or final1 == final3:
         matched = final2 if final2 == final3 or final1 == final2 else final1
         win_amount = int(bet_amount * (EMOJI_VALUES[matched] / 2))
         if win_amount < 1: win_amount = 1
         user_balances[user_id] += win_amount
-        result_comment = f"💵 **2-Match Combo! (ត្រូវ ២ គ្រាប់)**\n💰 ទទួលបាន: +{win_amount} {custom_coin}"
+        result_comment = f"💵 **2-Match Combo! (ត្រូវចំទម្រង់ ២ គ្រាប់)**\n💰 ទទួលបាន: +{win_amount} {custom_coin}"
     else:
         user_balances[user_id] -= bet_amount
-        result_comment = f"❌ **You lost... សោកស្តាយផងបង!**\n📉 បាត់បង់: -{bet_amount} {custom_coin}"
+        result_comment = f"❌ **You lost... សោកស្តាយផងបង លទ្ធផលមិនស៊ីគ្នាទេ!**\n📉 បាត់បង់: -{bet_amount} {custom_coin}"
 
-    # 🎬 ដំណាក់កាលទី ២: លុបសារវិលចាស់ រួចផ្ញើសារលទ្ធផល Embed ពណ៌មាសភ្លាមៗ
+    # 🎬 ដំណាក់កាលទី ២: លុបសារវិលចាស់ រួចផ្ញើសារលទ្ធផលគ្រាប់រង្វាន់ Emoji របស់អ្នកច្បាស់ៗក្រឡែត
     try:
         await spin_msg.delete()
     except:
         pass
 
     final_layout = (
-        f"{final1}    {final2}    {final3}\n\n"
+        f"**[ 🎰 លទ្ធផលម៉ាស៊ីនស្លត ]**\n"
+        f"➡️ ┃ {final1} ┃ {final2} ┃ {final3} ┃ ⬅️\n\n"
         f"{result_comment}\n"
-        f"💳 តុល្យភាពលុយសរុប: {user_balances[user_id]} {custom_coin}"
+        f"💳 តុល្យភាពលុយសរុបបច្ចុប្បន្ន:  {user_balances[user_id]}  {custom_coin}"
     )
     
     result_embed = discord.Embed(title=frame_title, description=final_layout, color=0xffd700)
     
-    if final1 == final2 == final3 == EMOJI_1:
-        result_embed.set_image(url="https://discordapp.com")
+    if final1 == final2 == final3:
+        result_embed.set_image(url="https://discordapp.net")
 
-    # ផ្ញើសារលទ្ធផលចុងក្រោយចូលទៅក្នុង Channel
     await ctx.send(embed=result_embed)
 
 # ==================== 💼 WORK LOGIC ====================
