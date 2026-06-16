@@ -24,17 +24,27 @@ user_balances = {}
 active_players = set()
 emoji = "<:photooutput:1515974261599244338>"
 
+# មុខងារបំប្លែងលេខឱ្យមានសញ្ញាក្បៀស (ឧទាហរណ៍៖ 1000 -> 1,000)
+def format_number(num):
+    return "{:,}".format(num)
+
+# បង្កើត ឬទាញយកទិន្នន័យគណនី និងស្ថិតិឈ្នះ/ចាញ់
 def get_balance(user_id):
     if user_id not in user_balances:
-        user_balances[user_id] = {"wallet": 100, "bank": 0}
+        user_balances[user_id] = {"wallet": 100, "bank": 0, "win": 0, "lost": 0}
+    if "win" not in user_balances[user_id]:
+        user_balances[user_id]["win"] = 0
+        user_balances[user_id]["lost"] = 0
     return user_balances[user_id]
 
+# គូរផ្ទាំងក្តារ XO
 def draw_board(board):
     lines = []
     for i in range(0, 9, 3):
         lines.append(f"{board[i]} | {board[i+1]} | {board[i+2]}")
     return "\n---------\n".join(lines)
 
+# ពិនិត្យរកអ្នកឈ្នះ
 def check_winner(b):
     for i in range(0, 9, 3):
         if b[i] == b[i+1] == b[i+2] != "⬜": return b[i]
@@ -47,13 +57,32 @@ def check_winner(b):
 
 @bot.event
 async def on_ready(): print(f'📢 Bot XO Online: {bot.user.name}')
-
+    # ==================== កែសម្រួល៖ tbal ឱ្យមានពណ៌ និងបន្ទាត់ស្អាតជាប់គ្នា ====================
 @bot.command(name="tbal")
 async def tbal(ctx):
     bal = get_balance(ctx.author.id)
-    embed = discord.Embed(title=f"💳 គណនីរបស់ {ctx.author.name}", color=discord.Color.green())
-    embed.add_field(name="👛 ក្នុងកាបូប (Wallet)", value=f"{bal['wallet']} {emoji}", inline=False)
-    embed.add_field(name="🏦 ក្នុងធនាគារ (Bank)", value=f"{bal['bank']} {emoji}", inline=False)
+    wallet_fmt = format_number(bal['wallet'])
+    bank_fmt = format_number(bal['bank'])
+    lost_fmt = format_number(bal['lost'])
+    win_fmt = format_number(bal['win'])
+    
+    # ប្រើប្រាស់ ANSI Color codes និងបន្ទាត់ពិសេសដើម្បីកុំឱ្យដាច់គ្នា
+    box_content = (
+        f" [1;34m╔══════════════════════════════════════╗ [0m\n"
+        f" [1;36m║          {ctx.author.name[:12]:<12} Balance          ║ [0m\n"
+        f" [1;34m╠══════════════════════════════════════╣ [0m\n"
+        f"  🪙 Coins :  [1;32m{wallet_fmt:<25} [0m\n"
+        f"                                      \n"
+        f"  🏦 Bank  :  [1;32m{bank_fmt:<25} [0m\n"
+        f" [1;34m╠══════════════════════════════════════╣ [0m\n"
+        f" [1;35m║              Gameplay.               ║ [0m\n"
+        f"  ❌ lost  :  [1;31m{lost_fmt:<26} [0m\n"
+        f"  👑 win   :  [1;32m{win_fmt:<26} [0m\n"
+        f" [1;34m╚══════════════════════════════════════╝ [0m"
+    )
+    
+    embed = discord.Embed(color=discord.Color.blue())
+    embed.description = f"```ansi\n{box_content}```\n**សញ្ញាសម្គាល់កាក់ប្រចាំខ្លួនបង៖**\n{emoji}"
     await ctx.send(embed=embed)
 
 @bot.command(name="dep")
@@ -65,7 +94,7 @@ async def deposit(ctx, amount: str):
         return
     bal["wallet"] -= amt
     bal["bank"] += amt
-    await ctx.send(f"✅ បានដាក់លុយ {amt} {emoji} ចូលធនាគាររួចរាល់!")
+    await ctx.send(f"✅ បានដាក់លុយ {format_number(amt)} {emoji} ចូលធនាគាររួចរាល់!")
 
 @bot.command(name="with")
 async def withdraw(ctx, amount: str):
@@ -76,8 +105,9 @@ async def withdraw(ctx, amount: str):
         return
     bal["bank"] -= amt
     bal["wallet"] += amt
-    await ctx.send(f"✅ បានដកលុយ {amt} {emoji} មកកាបូបរួចរាល់!")
+    await ctx.send(f"✅ បានដកលុយ {format_number(amt)} {emoji} មកកាបូបរួចរាល់!")
 
+# ==================== ចាប់ផ្តើម Command ពេលប្រកួត (txo) ====================
 @bot.command(name="txo")
 async def txo(ctx, p2: discord.Member, bet_amount: int):
     p1 = ctx.author
@@ -86,7 +116,7 @@ async def txo(ctx, p2: discord.Member, bet_amount: int):
         return
         
     if p1.id in active_players:
-        await ctx.send(f"❌ {p1.mention} អ្នកកំពុងជាប់លេងហ្គេមមួយរួចហើយ! សូមលេងឱ្យចប់សិន!")
+        await ctx.send(f"❌ {p1.mention} អ្នកកំពុងជាប់លេងហ្គេមមួយរួចហើយ!")
         return
     if p2.id in active_players:
         await ctx.send(f"❌ {p2.mention} កំពុងជាប់លេងហ្គេមជាមួយអ្នកផ្សេងរួចហើយ!")
@@ -97,7 +127,7 @@ async def txo(ctx, p2: discord.Member, bet_amount: int):
         await ctx.send("❌ មានភាគីម្ខាងខ្វះលុយក្នុងកាបូប!")
         return
 
-    await ctx.send(f"🎮 {p2.mention}! {p1.mention} បបួលលេង XO ភ្នាល់ {bet_amount} {emoji}!\n📌 **{p1.name}**=❌ | **{p2.name}**=⭕\nវាយពាក្យ accept ឬ decline (មានពេលឆ្លើយតប ៦០ វិនាទី)។")
+    await ctx.send(f"🎮 {p2.mention}! {p1.mention} បបួលលេង XO ភ្នាល់ {format_number(bet_amount)} {emoji}!\n📌 **{p1.name}**=❌ | **{p2.name}**=⭕\nវាយពាក្យ accept ឬ decline (មានពេលឆ្លើយតប ៦០ វិនាទី)។")
     try:
         res = await bot.wait_for('message', check=lambda m: m.author == p2 and m.channel == ctx.channel and m.content.lower() in ['accept', 'decline'], timeout=60.0)
     except asyncio.TimeoutError:
@@ -113,24 +143,43 @@ async def txo(ctx, p2: discord.Member, bet_amount: int):
 
     p1_bal["wallet"] -= bet_amount
     p2_bal["wallet"] -= bet_amount
-    pot, match_num, turn, st_player = bet_amount * 2, 1, p1, p1
-
+    pot = bet_amount * 2
+    match_num, turn, st_player = 1, p1, p1
     try:
         while True:
-            await ctx.send(f"⚔️ ប្រកួតទី {match_num}! (ក្អមកណ្តាល៖ {pot} {emoji})")
+            # ប្រអប់ចាប់ផ្តើមប្រកួត 1vs1 មានពណ៌ និងបន្ទាត់ស្អាតជាប់គ្នា
+            vs_box = (
+                f" [1;33m╔════════════════════════════════════════════════════╗ [0m\n"
+                f" [1;36m                     ការប្រកួត 1vs1 [0m\n"
+                f"    🛡️  [1;32m{p1.name[:12]:<12} [0m       Vs       🛡️  [1;31m{p2.name[:12]:<12} [0m\n"
+                f"     (username X)                           (O Username)\n"
+                f" [1;33m╠════════════════════════════════════════════════════╣ [0m\n"
+                f"                  | 🏆 ប្រកួតទី  [1;35m{match_num} [0m |                  \n"
+                f"                                                      \n"
+                f"  💵 លុយដែលភ្នាល់...........:  [1;32m{format_number(bet_amount)} [0m\n"
+                f"  🎁 លុយដែលឈ្នះ...........:  [1;33m{format_number(pot)} [0m\n"
+                f" [1;33m╚════════════════════════════════════════════════════╝ [0m"
+            )
+            
+            embed_vs = discord.Embed(color=discord.Color.orange())
+            embed_vs.description = f"```ansi\n{vs_box}```"
+            await ctx.send(embed=embed_vs)
+
             board, tie, win_sym = ["⬜"] * 9, False, None
             while True:
-                await ctx.send(f"វេនរបស់ {turn.mention} ({'❌' if turn == p1 else '⭕'}):\n```{draw_board(board)}```\n⏰ *មានពេល ៥ នាទីក្នុងការចុចដើរ កុំ AFK!*")
+                await ctx.send(f"វេនរបស់ {turn.mention} ({'❌' if turn == p1 else '⭕'}):\n```{draw_board(board)}```\n⏰ *មានពេល ៥ នាទីក្នុងការចុចដើរ!*")
                 try:
-                    # កែប្រែត្រង់នេះ៖ ប្តូរ Timeout ពី 45.0 ទៅ 300.0 វិនាទី (៥ នាទី)
                     msg = await bot.wait_for('message', check=lambda m: m.author == turn and m.channel == ctx.channel and m.content.isdigit() and 1 <= int(m.content) <= 9, timeout=300.0)
                     move = int(msg.content) - 1
                 except asyncio.TimeoutError:
-                    # ករណីអ្នកលេង AFK លើសពី ៥ នាទី
-                    await ctx.send(f"⏰ {turn.mention} បាន AFK លើសពី ៥ នាទីមិនព្រមដៅសញ្ញា! ត្រូវបានកាត់សេចក្តីឱ្យចាញ់ភ្លាមៗ!")
+                    await ctx.send(f"⏰ {turn.mention} បាន AFK លើសពី ៥ នាទី! ត្រូវបានកាត់សេចក្តីឱ្យចាញ់ភ្លាមៗ!")
                     win_sym = '⭕' if turn == p1 else '❌'
                     break
-                if board[move] != "⬜": continue
+                
+                if board[move] != "⬜": 
+                    await ctx.send("❌ ប្រអប់នេះមានគេដៅរួចហើយ! សូមជ្រើសរើសលេខផ្សេង!")
+                    continue
+                    
                 board[move] = '❌' if turn == p1 else '⭕'
                 res = check_winner(board)
                 if res:
@@ -138,8 +187,9 @@ async def txo(ctx, p2: discord.Member, bet_amount: int):
                     else: win_sym = res
                     break
                 turn = p2 if turn == p1 else p1
+                
             if tie:
-                await ctx.send(f"🏁 ស្មើគ្នា!\n```{draw_board(board)}```\n🤝 លេងឡើងវិញភ្លាមៗ...")
+                await ctx.send(f"🏁 ស្មើគ្នា!\n```{draw_board(board)}```\n🤝 ប្រកួតឡើងវិញភ្លាមៗ...")
                 match_num += 1
                 st_player = p2 if st_player == p1 else p1
                 turn = st_player
@@ -149,12 +199,31 @@ async def txo(ctx, p2: discord.Member, bet_amount: int):
 
         winner = p1 if win_sym == '❌' else p2
         loser = p2 if winner == p1 else p1
+        
         get_balance(winner.id)["wallet"] += pot
-        await ctx.send(f"🏁 លទ្ធផលចុងក្រោយ:\n```{draw_board(board)}```\n🎉 {winner.mention} ឈ្នះបាន {pot} {emoji}!\n💸 {loser.mention} ចាញ់អស់ {bet_amount} {emoji}!")
+        get_balance(winner.id)["win"] += 1
+        get_balance(loser.id)["lost"] += 1
+        
+        # ប្រអប់លទ្ធផលចុងក្រោយ
+        end_box = (
+            f" [1;32m╔════════════════════════════════════════════════════╗ [0m\n"
+            f"                     បញ្ចប់ការប្រកួត\n"
+            f"    👑 អ្នកឈ្នះ:  [1;32m{winner.name[:15]:<15} [0m  💀 អ្នកចាញ់:  [1;31m{loser.name[:15]:<15} [0m\n"
+            f" [1;32m╠════════════════════════════════════════════════════╣ [0m\n"
+            f"  លុយដែលភ្នាល់...........: {format_number(bet_amount)}\n"
+            f"  ប្រាក់រង្វាន់ដែលទទួលបាន..:  [1;33m{format_number(pot)} [0m\n"
+            f" [1;32m╚════════════════════════════════════════════════════╝ [0m"
+        )
+        
+        embed_end = discord.Embed(color=discord.Color.green())
+        embed_end.description = f"```{draw_board(board)}```\n```ansi\n{end_box}```\n🎉 {winner.mention} ឈ្នះបាន {format_number(pot)} {emoji}!\n💸 {loser.mention} ចាញ់អស់ {format_number(bet_amount)} {emoji}!"
+        await ctx.send(embed=embed_end)
+        
     finally:
         active_players.discard(p1.id)
         active_players.discard(p2.id)
 
+# ==================== ផ្នែកលេងជាមួយ NPC (vsnpc) ====================
 @bot.command(name="vsnpc")
 async def vsnpc(ctx, bet_amount: int):
     p1 = ctx.author
@@ -171,25 +240,41 @@ async def vsnpc(ctx, bet_amount: int):
 
     active_players.add(p1.id)
 
-    await ctx.send(f"🤖 ហ្គេមទល់នឹង NPC ចាប់ផ្តើម! ភ្នាល់ {bet_amount} {emoji}\n📌 {p1.mention}=**❌** (ដើរមុន) | NPC**=**⭕ (ដើរក្រោយ)")
+    vs_npc_box = (
+        f" [1;35m╔════════════════════════════════════════════════════╗ [0m\n"
+        f"                     ការប្រកួត 1vs1\n"
+        f"    🛡️  [1;32m{p1.name[:12]:<12} [0m       Vs       🤖  [1;31mNPC [0m\n"
+        f"     (username X)                           (O Username)\n"
+        f" [1;35m╠════════════════════════════════════════════════════╣ [0m\n"
+        f"  លុយដែលភ្នាល់...........: {format_number(bet_amount)}\n"
+        f"  លុយដែលឈ្នះ...........:  [1;33m{format_number(bet_amount * 2)} [0m\n"
+        f" [1;35m╚════════════════════════════════════════════════════╝ [0m"
+    )
+    embed_npc = discord.Embed(color=discord.Color.purple())
+    embed_npc.description = f"```ansi\n{vs_npc_box}```"
+    await ctx.send(embed=npc_box if 'npc_box' in locals() else embed_npc)
+
     p1_bal["wallet"] -= bet_amount
     pot, match_num = bet_amount * 2, 1
 
     try:
         while True:
-            await ctx.send(f"⚔️ ប្រកួតទល់នឹង NPC ទី {match_num}! (ក្នុងក្អម៖ {pot} {emoji})")
+            await ctx.send(f"⚔️ ប្រកួតទល់នឹង NPC ទី {match_num}! (ក្នុងក្អម៖ {format_number(pot)} {emoji})")
             board, tie, win_sym = ["⬜"] * 9, False, None
             while True:
                 await ctx.send(f"🟢 វេនរបស់ {p1.mention} (❌):\n```{draw_board(board)}```\n⏰ *មានពេល ៥ នាទីក្នុងការចុចដើរ!*")
                 try:
-                    # កែប្រែត្រង់នេះ៖ ប្តូរ Timeout សម្រាប់ vsnpc ទៅ ៥ នាទី (៣០០ វិនាទី) ដូចគ្នា
                     msg = await bot.wait_for('message', check=lambda m: m.author == p1 and m.channel == ctx.channel and m.content.isdigit() and 1 <= int(m.content) <= 9, timeout=300.0)
                     move = int(msg.content) - 1
                 except asyncio.TimeoutError:
                     await ctx.send(f"⏰ {p1.mention} ទុកចោលលើសពី ៥ នាទី! ហ្គេមត្រូវបានបញ្ចប់ ហើយ NPC ជាអ្នកឈ្នះ។")
                     win_sym = "⭕"
                     break
-                if board[move] != "⬜": continue
+                
+                if board[move] != "⬜": 
+                    await ctx.send("❌ ប្រអប់នេះមានគេដៅរួចហើយ! សូមជ្រើសរើសលេខផ្សេង!")
+                    continue
+                    
                 board[move] = "❌"
                 res = check_winner(board)
                 if res:
@@ -205,6 +290,7 @@ async def vsnpc(ctx, bet_amount: int):
                     if res == "Tie": tie = True
                     else: win_sym = res
                     break
+                    
             if tie:
                 await ctx.send(f"🏁 ស្មើគ្នាជាមួយ NPC!\n```{draw_board(board)}```\n🤝 លេងឡើងវិញភ្លាមៗ...")
                 match_num += 1
@@ -215,9 +301,11 @@ async def vsnpc(ctx, bet_amount: int):
         await ctx.send(f"🏁 លទ្ធផលចុងក្រោយ:\n```{draw_board(board)}```")
         if win_sym == "❌":
             p1_bal["wallet"] += pot
-            await ctx.send(f"🎉 {p1.mention} ឈ្នះ NPC បាន {pot} {emoji}!")
+            p1_bal["win"] += 1
+            await ctx.send(f"🎉 {p1.mention} ឈ្នះ NPC បាន {format_number(pot)} {emoji}!")
         else:
-            await ctx.send(f"💸 {p1.mention} ចាញ់ NPC អស់ {bet_amount} {emoji}!")
+            p1_bal["lost"] += 1
+            await ctx.send(f"💸 {p1.mention} ចាញ់ NPC អស់ {format_number(bet_amount)} {emoji}!")
     finally:
         active_players.discard(p1.id)
 
