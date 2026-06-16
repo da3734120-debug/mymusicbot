@@ -44,14 +44,18 @@ def draw_board(board):
         lines.append(f"{board[i]} | {board[i+1]} | {board[i+2]}")
     return "\n---------\n".join(lines)
 
-# ពិនិត្យរកអ្នកឈ្នះ
+# 🛠️ កែសម្រួល៖ ជួសជុលប្រព័ន្ធឆែករកអ្នកឈ្នះឱ្យត្រឹមត្រូវ (ដោះស្រាយបញ្ហាដើរមួយលេខចាញ់ភ្លាម)
 def check_winner(b):
+    # ឆែកជួរដេក (Rows)
     for i in range(0, 9, 3):
         if b[i] == b[i+1] == b[i+2] != "⬜": return b[i]
+    # ឆែកជួរឈរ (Columns)
     for i in range(3):
         if b[i] == b[i+3] == b[i+6] != "⬜": return b[i]
-    if b == b == b != "⬜": return b
-    if b == b == b != "⬜": return b
+    # ឆែកជួរទ្រូង (Diagonals)
+    if b[0] == b[4] == b[8] != "⬜": return b[0]
+    if b[2] == b[4] == b[6] != "⬜": return b[2]
+    # ករណីស្មើ
     if "⬜" not in b: return "Tie"
     return None
 
@@ -66,13 +70,13 @@ async def tbal(ctx):
     lost_fmt = format_number(bal['lost'])
     win_fmt = format_number(bal['win'])
     
-    # ប្រើប្រាស់ Embed Fields របស់ Discord វិញ ធានាមិនបាក់ប្រអប់ ឬរញ៉េរញ៉ៃលើទូរស័ព្ទឡើយ
+    # 🛠️ ប្រើប្រាស់រូបកាក់របស់បងជំនួសរូប Icon ចាស់ៗទាំងអស់
     embed = discord.Embed(
         title=f"💳 គណនីរបស់ {ctx.author.name}", 
         color=discord.Color.blue()
     )
-    embed.add_field(name="🪙 Coins (ក្នុងកាបូប)", value=f"**{wallet_fmt}**", inline=False)
-    embed.add_field(name="🏦 Bank (ក្នុងធនាគារ)", value=f"**{bank_fmt}**", inline=False)
+    embed.add_field(name=f"{emoji} Coins (ក្នុងកាបូប)", value=f"**{wallet_fmt}**", inline=False)
+    embed.add_field(name=f"🏦 Bank (ក្នុងធនាគារ)", value=f"**{bank_fmt}**", inline=False)
     embed.add_field(name="📊 ស្ថិតិការលេង (Gameplay)", value=f"❌ ចាញ់ (Lost): {lost_fmt} ដង\n👑 ឈ្នះ (Win): {win_fmt} ដង", inline=False)
     
     embed.set_footer(text="សញ្ញាសម្គាល់កាក់ប្រចាំខ្លួនបង")
@@ -100,7 +104,7 @@ async def withdraw(ctx, amount: str):
     bal["wallet"] += amt
     await ctx.send(f"✅ បានដកលុយ {format_number(amt)} {emoji} មកកាបូបរួចរាល់!")
 
-# ==================== ចាប់ផ្តើម Command ពេលប្រកួត (txo) ====================
+# ==================== Command ពេលប្រកួត (txo) ====================
 @bot.command(name="txo")
 async def txo(ctx, p2: discord.Member, bet_amount: int):
     p1 = ctx.author
@@ -120,7 +124,8 @@ async def txo(ctx, p2: discord.Member, bet_amount: int):
         await ctx.send("❌ មានភាគីម្ខាងខ្វះលុយក្នុងកាបូប!")
         return
 
-    await ctx.send(f"🎮 {p2.mention}! {p1.mention} បបួលលេង XO ភ្នាល់ {format_number(bet_amount)} {emoji}!\n📌 **{p1.name}**=❌ | **{p2.name}**=⭕\nវាយពាក្យ accept ឬ decline (មានពេលឆ្លើយតប ៦០ វិនាទី)។")
+    # 🛠️ សម្អាតសញ្ញាចុចៗ និងប្រើរូបកាក់របស់បងឱ្យត្រូវចំកន្លែងតែម្តង
+    await ctx.send(f"🎮 {p2.mention}! {p1.mention} បបួលលេង XO ភ្នាល់ចំនួន {format_number(bet_amount)} {emoji}!\n📌 **{p1.name}**=❌ | **{p2.name}**=⭕\nវាយពាក្យ accept ឬ decline (មានពេលឆ្លើយតប ៦០ វិនាទី)។")
     try:
         res = await bot.wait_for('message', check=lambda m: m.author == p2 and m.channel == ctx.channel and m.content.lower() in ['accept', 'decline'], timeout=60.0)
     except asyncio.TimeoutError:
@@ -227,7 +232,7 @@ async def vsnpc(ctx, bet_amount: int):
 
     p1_bal = get_balance(p1.id)
     if p1_bal["wallet"] < bet_amount:
-        await ctx.send("❌ លុយក្នុងកាបូបមិនគ្រប់គ្រាន់ទេ!")
+        await ctx.send(f"❌ លុយក្នុងកាបូបមិនគ្រប់គ្រាន់ទេ!")
         return
 
     active_players.add(p1.id)
@@ -302,7 +307,7 @@ async def vsnpc(ctx, bet_amount: int):
     finally:
         active_players.discard(p1.id)
 
-if __name__ == "__main__":
+if name == "__main__":
     keep_alive()
     token = os.getenv('DISCORD_TOKEN')
     if token: 
