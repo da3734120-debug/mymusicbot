@@ -2,30 +2,31 @@ import discord
 from discord.ext import commands
 import asyncio
 import os
+import random
 from flask import Flask
 from threading import Thread
 
-# --- ផ្នែកទី ១៖ Web Server ជំនួយ ---
 app = Flask('')
-
 @app.route('/')
-def home():
-    return "Bot XO Online 24/7!"
+def home(): return "Bot XO Online 24/7!"
 
 def run_web_server():
     port = int(os.getenv("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
 
-def keep_alive():
-    t = Thread(target=run_web_server)
-    t.start()
+def keep_alive(): Thread(target=run_web_server).start()
 
-# --- ផ្នែកទី ២៖ បង្កើត Bot ---
 intents = discord.Intents.default()
 intents.message_content = True
-bot = commands.Bot(command_prefix="!", intents=intents, case_insensitive=True)
+bot = commands.Bot(command_prefix="", intents=intents, case_insensitive=True)
 
 user_balances = {}
+emoji = "<:photooutput:1515974261599244338>"
+
+def get_balance(user_id):
+    if user_id not in user_balances:
+        user_balances[user_id] = {"wallet": 100, "bank": 0}
+    return user_balances[user_id]
 
 def draw_board(board):
     lines = []
@@ -34,131 +35,165 @@ def draw_board(board):
     return "\n---------\n".join(lines)
 
 def check_winner(b):
-    # នេះជាវិធីសរសេររកជួរឈ្នះដោយមិនប្រើអារេលាយឡំលេខច្រើន ការពារកូដខូច
-    for i in range(0, 9, 3): # ឆែកជួរដេក
+    for i in range(0, 9, 3):
         if b[i] == b[i+1] == b[i+2] != "⬜": return b[i]
-    for i in range(3): # ឆែកជួរឈរ
+    for i in range(3):
         if b[i] == b[i+3] == b[i+6] != "⬜": return b[i]
-    if b[0] == b[4] == b[8] != "⬜": return b[0] # ជួរទ្រូងទី១
-    if b[2] == b[4] == b[6] != "⬜": return b[2] # ជួរទ្រូងទី២
+    if b[0] == b[4] == b[8] != "⬜": return b[0]
+    if b[2] == b[4] == b[6] != "⬜": return b[2]
     if "⬜" not in b: return "Tie"
     return None
 
 @bot.event
-async def on_ready():
-    print(f'📢 Bot XO ដំណើរការពេញលេញ៖ {bot.user.name}')
+async def on_ready(): print(f'📢 Bot XO Online: {bot.user.name}')
 
-@bot.command(name="wallet")
-async def wallet(ctx):
-    balance = user_balances.get(ctx.author.id, 100)
-    user_balances[ctx.author.id] = balance
-    await ctx.send(f"💰 {ctx.author.mention} មានលុយ៖ {balance} កាក់")
+@bot.command(name="tbal")
+async def tbal(ctx):
+    bal = get_balance(ctx.author.id)
+    embed = discord.Embed(title=f"💳 គណនីរបស់ {ctx.author.name}", color=discord.Color.green())
+    embed.add_field(name="👛 ក្នុងកាបូប (Wallet)", value=f"{bal['wallet']} {emoji}", inline=False)
+    embed.add_field(name="🏦 ក្នុងធនាគារ (Bank)", value=f"{bal['bank']} {emoji}", inline=False)
+    await ctx.send(embed=embed)
 
-@bot.command(name="xo")
-async def xo(ctx, p2: discord.Member, bet_amount: int):
+@bot.command(name="dep")
+async def deposit(ctx, amount: str):
+    bal = get_balance(ctx.author.id)
+    amt = bal["wallet"] if amount.lower() == "all" else (int(amount) if amount.isdigit() else 0)
+    if amt <= 0 or bal["wallet"] < amt:
+        await ctx.send("❌ លុយមិនត្រឹមត្រូវ ឬមិនគ្រប់គ្រាន់ទេ!")
+        return
+    bal["wallet"] -= amt
+    bal["bank"] += amt
+    await ctx.send(f"✅ បានដាក់លុយ {amt} {emoji} ចូលធនាគាររួចរាល់!")
+
+@bot.command(name="with")
+async def withdraw(ctx, amount: str):
+    bal = get_balance(ctx.author.id)
+    amt = bal["bank"] if amount.lower() == "all" else (int(amount) if amount.isdigit() else 0)
+    if amt <= 0 or bal["bank"] < amt:
+        await ctx.send("❌ លុយមិនត្រឹមត្រូវ ឬមិនគ្រប់គ្រាន់ទេ!")
+        return
+    bal["bank"] -= amt
+    bal["wallet"] += amt
+    await ctx.send(f"✅ បានដកលុយ {amt} {emoji} មកកាបូបរួចរាល់!")
+
+@bot.command(name="txo")
+async def txo(ctx, p2: discord.Member, bet_amount: int):
     p1 = ctx.author
-    if p1 == p2:
-        await ctx.send("❌ អ្នកមិនអាចលេងជាមួយខ្លួនឯងបានទេ!")
+    if p1 == p2 or bet_amount <= 0:
+        await ctx.send("❌ មិនអាចលេងបានទេ!")
         return
-    if bet_amount <= 0:
-        await ctx.send("❌ ចំនួនលុយភ្នាល់ត្រូវតែធំជាង ០!")
-        return
-
-    p1_bal = user_balances.get(p1.id, 100)
-    p2_bal = user_balances.get(p2.id, 100)
-    user_balances[p1.id], user_balances[p2.id] = p1_bal, p2_bal
-
-    if p1_bal < bet_amount or p2_bal < bet_amount:
-        await ctx.send("❌ មានភាគីម្ខាងមិនមានលុយគ្រប់គ្រាន់សម្រាប់ភ្នាល់ទេ!")
+    p1_bal, p2_bal = get_balance(p1.id), get_balance(p2.id)
+    if p1_bal["wallet"] < bet_amount or p2_bal["wallet"] < bet_amount:
+        await ctx.send("❌ មានភាគីម្ខាងខ្វះលុយក្នុងកាបូប!")
         return
 
-    await ctx.send(f"🎮 {p2.mention}! {p1.mention} បបួលលេង XO ភ្នាល់ {bet_amount} កាក់!\nវាយ !accept ដើម្បីព្រម ឬ !decline ដើម្បីបដិសេធ។")
-
-    def check_accept(m):
-        return m.author == p2 and m.channel == ctx.channel and m.content.lower() in ['!accept', '!decline']
-
+    await ctx.send(f"🎮 {p2.mention}! {p1.mention} បបួលលេង XO ភ្នាល់ {bet_amount} {emoji}!\n📌 **{p1.name}**=❌ | **{p2.name}**=⭕\nវាយពាក្យ accept ឬ `decline`។")
     try:
-        response = await bot.wait_for('message', check=check_accept, timeout=60.0)
+        res = await bot.wait_for('message', check=lambda m: m.author == p2 and m.channel == ctx.channel and m.content.lower() in ['accept', 'decline'], timeout=60.0)
     except asyncio.TimeoutError:
-        await ctx.send("⏰ ហ្គេមត្រូវបានលុបចោលដោយសារគ្មានការឆ្លើយតប។")
+        await ctx.send("⏰ ហួសពេលកំណត់!")
         return
 
-    if response.content.lower() == '!decline':
-        await ctx.send(f"❌ {p2.mention} បានបដិសេធ។")
+    if res.content.lower() == 'decline':
+        await ctx.send("❌ បានបដិសេធ!")
         return
 
-    user_balances[p1.id] -= bet_amount
-    user_balances[p2.id] -= bet_amount
-    total_pot = bet_amount * 2
-
-    match_number = 1
-    p1_symbol, p2_symbol = "❌", "⭕"
-    starting_player = p1 
+    p1_bal["wallet"] -= bet_amount
+    p2_bal["wallet"] -= bet_amount
+    pot, match_num, turn, st_player = bet_amount * 2, 1, p1, p1
 
     while True:
-        await ctx.send(f"⚔️ ចាប់ផ្តើមប្រកួតទី {match_number}! (លុយក្នុងក្អមសរុប៖ {total_pot} កាក់)")
-        board = ["⬜"] * 9
-        turn = starting_player
-        game_ended_in_tie = False
-        winner = None
-
+        await ctx.send(f"⚔️ ប្រកួតទី {match_num}! (ក្អមកណ្តាល៖ {pot} {emoji})")
+        board, tie, win_sym = ["⬜"] * 9, False, None
         while True:
-            current_board_str = draw_board(board)
-            current_symbol = p1_symbol if turn == p1 else p2_symbol
-            await ctx.send(f"វេនរបស់ {turn.mention} ({current_symbol}):\n```{current_board_str}```")
-
-            def check_move(m):
-                return m.author == turn and m.channel == ctx.channel and m.content.isdigit() and 1 <= int(m.content) <= 9
-
+            await ctx.send(f"វេនរបស់ {turn.mention} ({'❌' if turn == p1 else '⭕'}):\n```{draw_board(board)}```")
             try:
-                move_msg = await bot.wait_for('message', check=check_move, timeout=45.0)
-                move = int(move_msg.content) - 1
+                msg = await bot.wait_for('message', check=lambda m: m.author == turn and m.channel == ctx.channel and m.content.
+                                         isdigit() and 1 <= int(m.content) <= 9, timeout=45.0)
+                move = int(msg.content) - 1
             except asyncio.TimeoutError:
-                await ctx.send(f"⏰ {turn.mention} ហួសពេលកំណត់! ត្រូវបានកាត់សេចក្តីឱ្យចាញ់។")
-                winner = p2 if turn == p1 else p1
+                await ctx.send(f"⏰ {turn.mention} ហួសពេល! ត្រូវកាត់ឱ្យចាញ់។")
+                win_sym = '⭕' if turn == p1 else '❌'
                 break
-
-            if board[move] != "⬜":
-                await ctx.send("❌ ឡូផ្លូវនោះមានគេដាក់រួចហើយ! ជ្រើសរើសលេខផ្សេង។")
-                continue
-
-            board[move] = current_symbol
-            
-            result = check_winner(board)
-            if result:
-                final_board_str = draw_board(board)
-                await ctx.send(f"🏁 **លទ្ធផល៖**\n```{final_board_str}```")
-                if result == "Tie":
-                    game_ended_in_tie = True
-                else:
-                    winner = p1 if result == p1_symbol else p2
+            if board[move] != "⬜": continue
+            board[move] = '❌' if turn == p1 else '⭕'
+            res = check_winner(board)
+            if res:
+                if res == "Tie": tie = True
+                else: win_sym = res
                 break
-
             turn = p2 if turn == p1 else p1
-
-        if game_ended_in_tie:
-            await ctx.send("🤝 **ស្មើគ្នាហើយ! ហ្គេមនឹងចាប់ផ្តើមឡើងវិញភ្លាមៗ...**")
-            match_number += 1
-            starting_player = p2 if starting_player == p1 else p1
+        if tie:
+            await ctx.send(f"🏁 ស្មើគ្នា!\n```{draw_board(board)}```\n🤝 លេងឡើងវិញភ្លាមៗ...")
+            match_num += 1
+            st_player = p2 if st_player == p1 else p1
+            turn = st_player
             await asyncio.sleep(2)
             continue
-
         break
 
-    user_balances[winner.id] += total_pot
+    winner = p1 if win_sym == '❌' else p2
     loser = p2 if winner == p1 else p1
+    get_balance(winner.id)["wallet"] += pot
+    await ctx.send(f"🏁 លទ្ធផលចុងក្រោយ:\n```{draw_board(board)}```\n🎉 {winner.mention} ឈ្នះបាន {pot} {emoji}!\n💸 {loser.mention} ចាញ់អស់ {bet_amount} {emoji}!")
 
-    await ctx.send(f"🎉 អបអរសាទរ! {winner.mention} ឈ្នះដាច់ជាស្ថាពរ និងទទួលបានកាក់ភ្នាល់ទាំងអស់សរុប {total_pot} កាក់! (សមតុល្យ៖ {user_balances[winner.id]})")
-    await ctx.send(f"💸 {loser.mention} បានចាញ់ការប្រកួត (សមតុល្យនៅសល់៖ {user_balances[loser.id]})")
+@bot.command(name="vsnpc")
+async def vsnpc(ctx, bet_amount: int):
+    p1 = ctx.author
+    if bet_amount <= 0: return
+    p1_bal = get_balance(p1.id)
+    if p1_bal["wallet"] < bet_amount:
+        await ctx.send("❌ លុយក្នុងកាបូបមិនគ្រប់គ្រាន់ទេ!")
+        return
 
-@bot.event
-async def on_command_error(ctx, error):
-    if isinstance(error, commands.CommandNotFound):
-        await ctx.send("❌ រកមិនឃើញបញ្ជានេះទេ! សូមប្រើប្រាស់ !wallet ឬ `!xo @ឈ្មោះមិត្តភក្តិ ចំនួនលុយ`។")
+    await ctx.send(f"🤖 ហ្គេមទល់នឹង NPC ចាប់ផ្តើម! ភ្នាល់ {bet_amount} {emoji}\n📌 {p1.mention}=**❌** (ដើរមុន) | NPC**=**⭕ (ដើរក្រោយ)")
+    p1_bal["wallet"] -= bet_amount
+    pot, match_num = bet_amount * 2, 1
 
-# --- ផ្នែកទី ៣៖ រត់ Bot ---
-if __name__ == "__main__":
+    while True:
+        await ctx.send(f"⚔️ ប្រកួតទល់នឹង NPC ទី {match_num}! (ក្នុងក្អម៖ {pot} {emoji})")
+        board, tie, win_sym = ["⬜"] * 9, False, None
+        while True:
+            await ctx.send(f"🟢 វេនរបស់ {p1.mention} (❌):\n```{draw_board(board)}```")
+            try:
+                msg = await bot.wait_for('message', check=lambda m: m.author == p1 and m.channel == ctx.channel and m.content.isdigit() and 1 <= int(m.content) <= 9, timeout=45.0)
+                move = int(msg.content) - 1
+            except asyncio.TimeoutError:
+                await ctx.send("⏰ ហួសពេល! កាត់ឱ្យចាញ់។")
+                win_sym = "⭕"
+                break
+            if board[move] != "⬜": continue
+            board[move] = "❌"
+            res = check_winner(board)
+            if res:
+                if res == "Tie": tie = True
+                else: win_sym = res
+                break
+
+            await asyncio.sleep(1.0)
+            empty = [i for i, c in enumerate(board) if c == "⬜"]
+            board[random.choice(empty)] = "⭕"
+            res = check_winner(board)
+            if res:
+                if res == "Tie": tie = True
+                else: win_sym = res
+                break
+        if tie:
+            await ctx.send(f"🏁 ស្មើគ្នាជាមួយ NPC!\n```{draw_board(board)}```\n🤝 លេងឡើងវិញភ្លាមៗ...")
+            match_num += 1
+            await asyncio.sleep(2)
+            continue
+        break
+
+    await ctx.send(f"🏁 លទ្ធផលចុងក្រោយ:\n```{draw_board(board)}```")
+    if win_sym == "❌":
+        p1_bal["wallet"] += pot
+        await ctx.send(f"🎉 {p1.mention} ឈ្នះ NPC បាន {pot} {emoji}!")
+    else:
+        await ctx.send(f"💸 {p1.mention} ចាញ់ NPC អស់ {bet_amount} {emoji}!")
+
+if name == "__main__":
     keep_alive()
-    token = os.getenv('DISCORD_TOKEN') 
-    if token:
-        bot.run(token)
+    token = os.getenv('DISCORD_TOKEN')
+    if token: bot.run(token)
