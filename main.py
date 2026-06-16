@@ -255,7 +255,7 @@ async def vsnpc(ctx, bet_amount: int):
     p1_bal["wallet"] -= bet_amount
     match_num = 1
 
-   try:
+  try:
         while True:
             # 🛠️ លុបសញ្ញាចុចៗ ..... ចេញ និងប្រើរូបកាក់របស់បងឱ្យត្រូវជួរគ្នា
             vs_box = (
@@ -345,7 +345,8 @@ async def vsnpc(ctx, bet_amount: int):
     p1_bal = get_balance(p1.id)
     if p1_bal["wallet"] < bet_amount:
         await ctx.send("❌ លុយក្នុងកាបូបមិនគ្រប់គ្រាន់ទេ!")
-        returnactive_players.add(p1.id)
+        return
+        active_players.add(p1.id)
     pot = bet_amount * 2
 
     # 🛠️ កែសម្រួល៖ រុញឈ្មោះ 🤖 NPC ឱ្យឡើងមកលើនៅជាប់ជួរ Vs គ្នាស្អាត និងលុបសញ្ញាចុចៗចេញ
