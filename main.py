@@ -44,7 +44,7 @@ def draw_board(board):
         lines.append(f"{board[i]} | {board[i+1]} | {board[i+2]}")
     return "\n---------\n".join(lines)
 
-# ជួសជុលប្រព័ន្ធឆែករកអ្នកឈ្នះ (ដោះស្រាយបញ្ហាដើរមួយកွက်ចាញ់ភ្លាម)
+# ប្រព័ន្ធឆែករកអ្នកឈ្នះ (ដោះស្រាយបញ្ហាដើរមួយកွက်ចាញ់រួចរាល់)
 def check_winner(b):
     # ឆែកជួរដេក (Rows)
     for i in range(0, 9, 3):
@@ -70,16 +70,22 @@ async def tbal(ctx):
     lost_fmt = format_number(bal['lost'])
     win_fmt = format_number(bal['win'])
     
+    # 🛠️ កែសម្រួល៖ បង្ហាញទម្រង់ Coins : [លុយ] [រូបកាក់] ត្រង់ជួរគ្នាស្អាតឥតខ្ចោះលើទូរស័ព្ទ
     embed = discord.Embed(
         title=f"💳 គណនីរបស់ {ctx.author.name}", 
         color=discord.Color.blue()
     )
-    embed.add_field(name=f"{emoji} Coins (ក្នុងកាបូប)", value=f"**{wallet_fmt}**", inline=False)
-    embed.add_field(name="🏦 Bank (ក្នុងធនាគារ)", value=f"**{bank_fmt}**", inline=False)
-    embed.add_field(name="📊 ស្ថិតិការលេង (Gameplay)", value=f"❌ ចាញ់ (Lost): {lost_fmt} ដង\n👑 ឈ្នះ (Win): {win_fmt} ដង", inline=False)
+    embed.description = (
+        f"**Coins :** {wallet_fmt} {emoji}\n"
+        f"**Bank :** {bank_fmt} {emoji}\n\n"
+        f"📊 **ស្ថិតិការលេង (Gameplay)**\n"
+        f"❌ ចាញ់ (Lost): {lost_fmt} ដង\n"
+        f"👑 ឈ្នះ (Win): {win_fmt} ដង"
+    )
     
     embed.set_footer(text="សញ្ញាសម្គាល់កាក់ប្រចាំខ្លួនបង")
-    await ctx.send(content=f"{emoji}", embed=embed)
+    # លុប content=f"{emoji}" ចាស់ចេញរួចរាល់ ដើម្បីកុំឱ្យមានរូបកាក់លោតលើសនៅខាងលើ Embed
+    await ctx.send(embed=embed)
 
 @bot.command(name="dep")
 async def deposit(ctx, amount: str):
@@ -143,21 +149,19 @@ async def txo(ctx, p2: discord.Member, bet_amount: int):
     match_num, turn, st_player = 1, p1, p1
     try:
         while True:
-            # បង្កើតប្រអប់ព័ត៌មានត្រង់ជួរគ្នាស្អាតឥតខ្ចោះ គ្មានសញ្ញាចុចៗរញ៉េរញ៉ៃ
-            vs_box = (
+            # 🛠️ កែសម្រួល៖ ទម្រង់ប្រអប់ Embed ស្អាត ត្រូវតាមទំហំអេក្រង់ទូរស័ព្ទដៃ និងលុយភ្នាល់/លុយឈ្នះត្រង់ជួរគ្នា
+            embed_vs = discord.Embed(
+                title="⚔️ ការប្រកួត 1vs1 ⚔️", 
+                color=discord.Color.orange()
+            )
+            embed_vs.description = (
+                f"**❌ {p1.name}**   Vs   **⭕ {p2.name}**\n"
                 f"----------------------------------------\n"
-                f"             ការប្រកួត 1vs1\n"
-                f"   ❌ {p1.name[:12]:<12}   Vs   ⭕ {p2.name[:12]:<12}\n"
-                f"----------------------------------------\n"
-                f"               | 🏆 ប្រកួតទី {match_num} |\n"
-                f"                                        \n"
-                f" លុយដែលភ្នាល់: {format_number(bet_amount)} {emoji}\n"
-                f" លុយដែលឈ្នះ: {format_number(pot)} {emoji}\n"
+                f"🏆 ប្រកួតទី : {match_num}\n"
+                f"💵 លុយដែលភ្នាល់ : {format_number(bet_amount)} {emoji}\n"
+                f"🎁 លុយដែលឈ្នះ : {format_number(pot)} {emoji}\n"
                 f"----------------------------------------"
             )
-            
-            embed_vs = discord.Embed(color=discord.Color.orange())
-            embed_vs.description = f"```{vs_box}```"
             await ctx.send(embed=embed_vs)
 
             board, tie, win_sym = ["⬜"] * 9, False, None
@@ -199,19 +203,20 @@ async def txo(ctx, p2: discord.Member, bet_amount: int):
         get_balance(winner.id)["win"] += 1
         get_balance(loser.id)["lost"] += 1
         
-        end_box = (
+        # 🛠️ កែសម្រួល៖ ទម្រង់ប្រអប់បង្ហាញលទ្ធផលចុងក្រោយជា Embed ស្អាតលើទូរស័ព្ទ
+        embed_end = discord.Embed(
+            title="🏁 បញ្ចប់ការប្រកួត 🏁", 
+            color=discord.Color.green()
+        )
+        embed_end.description = (
+            f"👑 អ្នកឈ្នះ : {winner.mention}\n"
+            f"💀 អ្នកចាញ់ : {loser.mention}\n"
             f"----------------------------------------\n"
-            f"             បញ្ចប់ការប្រកួត\n"
-            f"  👑 អ្នកឈ្នះ: {winner.name[:12]:<12}  💀 អ្នកចាញ់: {loser.name[:12]:<12}\n"
-            f"----------------------------------------\n"
-            f" លុយដែលភ្នាល់: {format_number(bet_amount)} {emoji}\n"
-            f" ប្រាក់រង្វាន់ដែលទទួលបាន: {format_number(pot)} {emoji}\n"
+            f"💵 លុយភ្នាល់ : {format_number(bet_amount)} {emoji}\n"
+            f"🎁 ប្រាក់រង្វាន់ដែលទទួលបាន : {format_number(pot)} {emoji}\n"
             f"----------------------------------------"
         )
-        
-        embed_end = discord.Embed(color=discord.Color.green())
-        embed_end.description = f"```{draw_board(board)}```\n```{end_box}```\n🎉 {winner.mention} ឈ្នះបាន {format_number(pot)} {emoji}!\n💸 {loser.mention} ចាញ់អស់ {format_number(bet_amount)} {emoji}!"
-        await ctx.send(embed=embed_end)
+        await ctx.send(content=f"```{draw_board(board)}```", embed=embed_end)
         
     finally:
         active_players.discard(p1.id)
@@ -235,18 +240,18 @@ async def vsnpc(ctx, bet_amount: int):
     active_players.add(p1.id)
     pot = bet_amount * 2
 
-    # រៀបចំឈ្មោះ NPC ឱ្យត្រង់ជួរ និងលុយភ្នាល់ស្អាតល្អ
-    vs_npc_box = (
+    # 🛠️ កែសម្រួល៖ ទម្រង់ប្រអប់ប្រកួតជាមួយ NPC ជា Embed ស្អាតត្រូវទំហំទូរស័ព្ទដៃដូចគ្នា
+    embed_npc = discord.Embed(
+        title="⚔️ ការប្រកួត 1vs1 (ទល់នឹង NPC) ⚔️", 
+        color=discord.Color.purple()
+    )
+    embed_npc.description = (
+        f"**❌ {p1.name}**   Vs   **🤖 NPC**\n"
         f"----------------------------------------\n"
-        f"             ការប្រកួត 1vs1\n"
-        f"   ❌ {p1.name[:12]:<12}   Vs   🤖 NPC\n"
-        f"----------------------------------------\n"
-        f" លុយដែលភ្នាល់: {format_number(bet_amount)} {emoji}\n"
-        f" លុយដែលឈ្នះ: {format_number(pot)} {emoji}\n"
+        f"💵 លុយដែលភ្នាល់ : {format_number(bet_amount)} {emoji}\n"
+        f"🎁 លុយដែលឈ្នះ : {format_number(pot)} {emoji}\n"
         f"----------------------------------------"
     )
-    embed_npc = discord.Embed(color=discord.Color.purple())
-    embed_npc.description = f"```{vs_npc_box}```"
     await ctx.send(embed=embed_npc)
 
     p1_bal["wallet"] -= bet_amount
@@ -304,7 +309,7 @@ async def vsnpc(ctx, bet_amount: int):
     finally:
         active_players.discard(p1.id)
 
-# 🛠️ កែសម្រួល៖ ប្រើប្រាស់ Syntax ត្រឹមត្រូវឥតខ្ចោះដើម្បីបញ្ឆេះបូតឱ្យអនឡាញ
+# 🛠️ ប្រើប្រាស់លក្ខខណ្ឌត្រឹមត្រូវឥតខ្ចោះ ដើម្បីបញ្ឆេះបូតឱ្យដំណើរការ
 if __name__ == "__main__":
     keep_alive()
     token = os.getenv('DISCORD_TOKEN')
