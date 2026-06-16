@@ -193,7 +193,7 @@ async def vsnpc(ctx, bet_amount: int):
     else:
         await ctx.send(f"💸 {p1.mention} ចាញ់ NPC អស់ {bet_amount} {emoji}!")
 
-if name == "__main__":
+if __name__ == "__main__":
     keep_alive()
     token = os.getenv('DISCORD_TOKEN')
     if token: bot.run(token)
