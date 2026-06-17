@@ -221,8 +221,9 @@ async def txo(ctx, p2: discord.Member, bet_amount: int):
                     win_sym = '⭕' if turn == p1 else '❌'
                     break
                 
-                if board[move] != "⬜":await ctx.send("❌ ប្រអប់នេះមានគេដៅរួចហើយ! សូមជ្រើសរើសលេខផ្សេង!")
-                    continue
+                if board[move] != "⬜": 
+                    await ctx.send("❌ ប្រអប់នេះមានគេដៅរួចហើយ! សូមជ្រើសរើសលេខផ្សេង!")
+                    continue # 👈 កែឱ្យត្រង់ជួរគ្នាបែបនេះ គឺលែងលោត Error ទៀតហើយបង!
                     
                 board[move] = '❌' if turn == p1 else '⭕'
                 res = check_winner(board)
