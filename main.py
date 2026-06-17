@@ -325,7 +325,8 @@ async def vsnpc(ctx, amount: str):
                 except asyncio.TimeoutError:
                     await ctx.send(f"⏰ {p1.display_name} ទុកចោលលើសពី ៥ នាទី! ហ្គេមត្រូវបានបញ្ចប់ ហើយ NPC ជាអ្នកឈ្នះ។")
                     win_sym = "⭕"
-                    breakif board[move] != "⬜": 
+                    break
+                    if board[move] != "⬜": 
                     await ctx.send("❌ ប្រអប់នេះមានគេដៅរួចហើយ! សូមជ្រើសរើសលេខផ្សេង!")
                     continue
                     
