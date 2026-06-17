@@ -364,7 +364,7 @@ async def vsnpc(ctx, amount: str):
     finally:
         active_players.discard(p1.id)
 
-if name == "__main__":
+if __name__ == "__main__":
     keep_alive()
     token = os.getenv('DISCORD_TOKEN')
     if token: 
