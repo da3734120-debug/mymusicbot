@@ -23,10 +23,8 @@ bot = commands.Bot(command_prefix="", intents=intents, case_insensitive=True)
 user_balances = {}
 active_players = set()
 
-# រូបកាក់របស់បង
+# រូបកាក់របស់បង (ប្តូរទៅជាកាក់ថ្មីដែលបងចង់បាន)
 emoji = "<:emoji_5:1516480628370047250>"
-
-# 🛠️ បន្ថែមរូបសញ្ញាថ្មីជំនួសដៃហ្គេម 🎮 តាមដែលបងបានផ្ញើមក
 game_icon = "<:emoji_6:1516791105880985652>"
 
 # មុខងារបំប្លែងលេខឱ្យមានសញ្ញាក្បៀស (ឧទាហរណ៍៖ 1000 -> 1,000)
@@ -72,7 +70,7 @@ async def tbal(ctx):
     win_fmt = format_number(bal['win'])
     
     embed = discord.Embed(
-        title=f"💳 គណនីរបស់ {ctx.author.name}", 
+        title=f"💳 គណនីរបស់ {ctx.author.display_name}", 
         color=discord.Color.blue()
     )
     embed.description = (
@@ -108,14 +106,13 @@ async def withdraw(ctx, amount: str):
     bal["wallet"] += amt
     await ctx.send(f"✅ បានដកលុយ {format_number(amt)} {emoji} មកកាបូបរួចរាល់!")
 
-# 🛠️ បង្កើតប្រព័ន្ធប៊ូតូនចុច Accept (បៃតងខាងឆ្វេង) និង Decline (ក្រហមខាងស្តាំ)
+# ប្រព័ន្ធប៊ូតូនចុច Accept (បៃតងខាងឆ្វេង) និង Decline (ក្រហមខាងស្តាំ)
 class AcceptDeclineView(discord.ui.View):
     def __init__(self, p2, timeout=60.0):
         super().__init__(timeout=timeout)
         self.p2 = p2
         self.value = None
 
-    # ប៊ូតូនបៃតងខាងឆ្វេង (Accept)
     @discord.ui.button(label="Accept", style=discord.ButtonStyle.green)
     async def accept(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user != self.p2:
@@ -124,7 +121,6 @@ class AcceptDeclineView(discord.ui.View):
         self.value = "accept"
         self.stop()
 
-    # ប៊ូតូនក្រហមខាងស្តាំ (Decline)
     @discord.ui.button(label="Decline", style=discord.ButtonStyle.red)
     async def decline(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user != self.p2:
@@ -141,48 +137,54 @@ async def txo(ctx, p2: discord.Member, bet_amount: int):
         return
         
     if p1.id in active_players:
-        await ctx.send(f"❌ {p1.mention} អ្នកកំពុងជាប់លេងហ្គេមមួយរួចហើយ!")
+        await ctx.send(f"❌ {p1.display_name} អ្នកកំពុងជាប់លេងហ្គេមមួយរួចហើយ!")
         return
     if p2.id in active_players:
-        await ctx.send(f"❌ {p2.mention} កំពុងជាប់លេងហ្គេមជាមួយអ្នកផ្សេងរួចហើយ!")
+        await ctx.send(f"❌ {p2.display_name} កំពុងជាប់លេងហ្គេមជាមួយអ្នកផ្សេងរួចហើយ!")
         return
 
     p1_bal, p2_bal = get_balance(p1.id), get_balance(p2.id)
-    if p1_bal["wallet"] < bet_amount or p2_bal["wallet"] < bet_amount:
-        await ctx.send("❌ មានភាគីម្ខាងខ្វះលុយក្នុងកាបូប!")
+    
+    # 🛠️ ជួសជុល៖ ឆែកលុយក្នុងកាបូប និងប្រាប់ចំឈ្មោះគណនី (Display Name) ភាគីណាដែលខ្វះលុយ
+    if p1_bal["wallet"] < bet_amount:
+        await ctx.send(f"❌ {p1.display_name} អ្នកមិនមានលុយគ្រប់គ្រាន់ក្នុងកាបូបសម្រាប់ភ្នាល់ចំនួន {format_number(bet_amount)} {emoji} ទេ!")
+        return
+    if p2_bal["wallet"] < bet_amount:
+        await ctx.send(f"❌ {p2.display_name} មិនមានលុយគ្រប់គ្រាន់ក្នុងកាបូបសម្រាប់ភ្នាល់ចំនួន {format_number(bet_amount)} {emoji} ទេ!")
         return
 
-    # 🛠️ កែសម្រួល៖ ប្រើប្រាស់រូបសញ្ញាថ្មី game_icon របស់បង និងណែនាំឱ្យចុចប៊ូតូន
-    view = AcceptDeclineView(p2, timeout=60.0)
-    msg = await ctx.send(
-        f"{game_icon} {p2.mention}! {p1.mention} បបួលលេង XO ភ្នាល់ចំនួន {format_number(bet_amount)} {emoji}!\n"
-        f"📌 **{p1.name}**=❌ | **{p2.name}**=⭕\n"
-        f"👉 សូមចុចប៊ូតូនខាងក្រោមដើម្បីឆ្លើយតប (មានពេល ៦០ វិនាទី)៖", 
-        view=view
+    # 🛠️ កែសម្រួល៖ បង្កើតប្រអប់ Embed ពណ៌ខៀវស្អាត សម្រាប់ដាក់ពាក្យបបួលលេង និងបង្ហាញឈ្មោះអាខោនពិត (Display Name)
+    embed_invite = discord.Embed(
+        title=f"{game_icon} ការបបួលប្រកួត XO ភ្នាល់កាក់",
+        color=discord.Color.blue()
     )
+    embed_invite.description = (
+        f"🎮 {p2.mention}! {p1.mention} បានបបួលអ្នកលេងហ្គេម XO\n"
+        f"----------------------------------------\n"
+        f"❌ អ្នកបបួល (X) : {p1.display_name}\n"
+        f"⭕ អ្នកត្រូវលេង (O) : {p2.display_name}\n"
+        f"💵 ទឹកប្រាក់ភ្នាល់ : {format_number(bet_amount)} {emoji}\n"
+        f"----------------------------------------\n"
+        f"👉 សូមចុចប៊ូតូនខាងក្រោមដើម្បីឆ្លើយតប (មានពេល ៦០ វិនាទី)៖"
+    )
+
+    view = AcceptDeclineView(p2, timeout=60.0)
+    msg = await ctx.send(embed=embed_invite, view=view)
     
-    # រង់ចាំអ្នកលេងចុចប៊ូតូន
     await view.wait()
 
-    # ករណីហួសពេលកំណត់ (Timeout)
     if view.value is None:
-        # បិទប៊ូតូនកុំឱ្យចុចកើតទៀត
-        for child in view.children:
-            child.disabled = True
-        await msg.edit(content=f"⏰ ហួសពេលកំណត់ក្នុងការទទួលការបបួល! (បិទការចុច)", view=view)
+        for child in view.children: child.disabled = True
+        await msg.edit(content=f"⏰ ហួសពេលកំណត់ក្នុងការទទួលការបបួល!", view=view)
         return
 
-    # ករណីចុចបដិសេធ (Decline)
     if view.value == "decline":
-        for child in view.children:
-            child.disabled = True
-        await msg.edit(content=f"❌ {p2.mention} បានបដិសេធការបបួលលេង!", view=view)
+        for child in view.children: child.disabled = True
+        await msg.edit(content=f"❌ {p2.display_name} បានបដិសេធការបបួលលេង!", view=view)
         return
 
-    # ករណីចុចព្រមលេង (Accept) - ចាប់ផ្តើមហ្គេម
-    for child in view.children:
-        child.disabled = True
-    await msg.edit(content=f"✅ {p2.mention} បានយល់ព្រមចូលរួមលេង! ហ្គេមចាប់ផ្តើម!", view=view)
+    for child in view.children: child.disabled = True
+    await msg.edit(content=f"✅ {p2.display_name} បានយល់ព្រមចូលរួមលេង! ហ្គេមចាប់ផ្តើម!", view=view)
 
     active_players.add(p1.id)
     active_players.add(p2.id)
@@ -199,7 +201,7 @@ async def txo(ctx, p2: discord.Member, bet_amount: int):
                 color=discord.Color.orange()
             )
             embed_vs.description = (
-                f"**❌ {p1.name}**   Vs   **⭕ {p2.name}**\n"
+                f"**❌ {p1.display_name}**   Vs   **⭕ {p2.display_name}**\n"
                 f"----------------------------------------\n"
                 f"🏆 ប្រកួតទី : {match_num}\n"
                 f"💵 លុយដែលភ្នាល់ : {format_number(bet_amount)} {emoji}\n"
@@ -215,12 +217,11 @@ async def txo(ctx, p2: discord.Member, bet_amount: int):
                     msg_turn = await bot.wait_for('message', check=lambda m: m.author == turn and m.channel == ctx.channel and m.content.isdigit() and 1 <= int(m.content) <= 9, timeout=300.0)
                     move = int(msg_turn.content) - 1
                 except asyncio.TimeoutError:
-                    await ctx.send(f"⏰ {turn.mention} បាន AFK លើសពី ៥ នាទី! ត្រូវបានកាត់សេចក្តីឱ្យចាញ់ភ្លាមៗ!")
+                    await ctx.send(f"⏰ {turn.display_name} បាន AFK លើសពី ៥ នាទី! ត្រូវបានកាត់សេចក្តីឱ្យចាញ់ភ្លាមៗ!")
                     win_sym = '⭕' if turn == p1 else '❌'
                     break
                 
-                if board[move] != "⬜": 
-                    await ctx.send("❌ ប្រអប់នេះមានគេដៅរួចហើយ! សូមជ្រើសរើសលេខផ្សេង!")
+                if board[move] != "⬜":await ctx.send("❌ ប្រអប់នេះមានគេដៅរួចហើយ! សូមជ្រើសរើសលេខផ្សេង!")
                     continue
                     
                 board[move] = '❌' if turn == p1 else '⭕'
@@ -267,17 +268,29 @@ async def txo(ctx, p2: discord.Member, bet_amount: int):
 
 # ==================== ផ្នែកលេងជាមួយ NPC (vsnpc) ====================
 @bot.command(name="vsnpc")
-async def vsnpc(ctx, bet_amount: int):
+async def vsnpc(ctx, amount: str):
     p1 = ctx.author
-    if bet_amount <= 0: return
-    
     if p1.id in active_players:
-        await ctx.send(f"❌ {p1.mention} អ្នកកំពុងជាប់លេងហ្គេមមួយរួចហើយ! សូមលេងឱ្យចប់សិន!")
+        await ctx.send(f"❌ {p1.display_name} អ្នកកំពុងជាប់លេងហ្គេមមួយរួចហើយ! សូមលេងឱ្យចប់សិន!")
         return
 
     p1_bal = get_balance(p1.id)
+    
+    # 🛠️ ជួសជុល៖ បន្ថែមមុខងារ "vsnpc all" ដើម្បីយកលុយក្នុងកាបូបទាំងអស់ទៅភ្នាល់លេង
+    if amount.lower() == "all":
+        bet_amount = p1_bal["wallet"]
+    elif amount.isdigit():
+        bet_amount = int(amount)
+    else:
+        await ctx.send("❌ សូមបញ្ចូលចំនួនលុយ ឬវាយពាក្យ all ឱ្យបានត្រឹមត្រូវ!")
+        return
+
+    if bet_amount <= 0:
+        await ctx.send("❌ ចំនួនលុយភ្នាល់ត្រូវតែធំជាង 0 កាក់!")
+        return
+
     if p1_bal["wallet"] < bet_amount:
-        await ctx.send("❌ លុយក្នុងកាបូបមិនគ្រប់គ្រាន់ទេ!")
+        await ctx.send(f"❌ {p1.display_name} អ្នកមិនមានលុយគ្រប់គ្រាន់ក្នុងកាបូបសម្រាប់ភ្នាល់ចំនួន {format_number(bet_amount)} {emoji} ទេ!")
         return
 
     active_players.add(p1.id)
@@ -288,7 +301,7 @@ async def vsnpc(ctx, bet_amount: int):
         color=discord.Color.purple()
     )
     embed_npc.description = (
-        f"**❌ {p1.name}**   Vs   **🤖 NPC**\n"
+        f"**❌ {p1.display_name}**   Vs   **🤖 NPC**\n"
         f"----------------------------------------\n"
         f"💵 លុយដែលភ្នាល់ : {format_number(bet_amount)} {emoji}\n"
         f"🎁 លុយដែលឈ្នះ : {format_number(pot)} {emoji}\n"
@@ -309,11 +322,9 @@ async def vsnpc(ctx, bet_amount: int):
                     msg = await bot.wait_for('message', check=lambda m: m.author == p1 and m.channel == ctx.channel and m.content.isdigit() and 1 <= int(m.content) <= 9, timeout=300.0)
                     move = int(msg.content) - 1
                 except asyncio.TimeoutError:
-                    await ctx.send(f"⏰ {p1.mention} ទុកចោលលើសពី ៥ នាទី! ហ្គេមត្រូវបានបញ្ចប់ ហើយ NPC ជាអ្នកឈ្នះ។")
+                    await ctx.send(f"⏰ {p1.display_name} ទុកចោលលើសពី ៥ នាទី! ហ្គេមត្រូវបានបញ្ចប់ ហើយ NPC ជាអ្នកឈ្នះ។")
                     win_sym = "⭕"
-                    break
-                
-                if board[move] != "⬜": 
+                    breakif board[move] != "⬜": 
                     await ctx.send("❌ ប្រអប់នេះមានគេដៅរួចហើយ! សូមជ្រើសរើសលេខផ្សេង!")
                     continue
                     
