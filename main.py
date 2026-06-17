@@ -22,7 +22,9 @@ bot = commands.Bot(command_prefix="", intents=intents, case_insensitive=True)
 
 user_balances = {}
 active_players = set()
-emoji = "<:photooutput:1515974261599244338>"
+
+# 🛠️ បានកែសម្រួល៖ ប្តូរមកប្រើរូបកាក់ថ្មីរបស់បងនៅទីនេះរួចរាល់ហើយ!
+emoji = "<:emoji_5:1516480628370047250>"
 
 # មុខងារបំប្លែងលេខឱ្យមានសញ្ញាក្បៀស (ឧទាហរណ៍៖ 1000 -> 1,000)
 def format_number(num):
@@ -44,18 +46,14 @@ def draw_board(board):
         lines.append(f"{board[i]} | {board[i+1]} | {board[i+2]}")
     return "\n---------\n".join(lines)
 
-# ប្រព័ន្ធឆែករកអ្នកឈ្នះ (ដោះស្រាយបញ្ហាដើរមួយកွက်ចាញ់រួចរាល់)
+# ប្រព័ន្ធឆែករកអ្នកឈ្នះ
 def check_winner(b):
-    # ឆែកជួរដេក (Rows)
     for i in range(0, 9, 3):
         if b[i] == b[i+1] == b[i+2] != "⬜": return b[i]
-    # ឆែកជួរឈរ (Columns)
     for i in range(3):
         if b[i] == b[i+3] == b[i+6] != "⬜": return b[i]
-    # ឆែកជួរទ្រូង (Diagonals)
     if b[0] == b[4] == b[8] != "⬜": return b[0]
     if b[2] == b[4] == b[6] != "⬜": return b[2]
-    # ករណីស្មើ
     if "⬜" not in b: return "Tie"
     return None
 
@@ -70,21 +68,20 @@ async def tbal(ctx):
     lost_fmt = format_number(bal['lost'])
     win_fmt = format_number(bal['win'])
     
-    # 🛠️ កែសម្រួល៖ បង្ហាញទម្រង់ Coins : [លុយ] [រូបកាក់] ត្រង់ជួរគ្នាស្អាតឥតខ្ចោះលើទូរស័ព្ទ
     embed = discord.Embed(
         title=f"💳 គណនីរបស់ {ctx.author.name}", 
         color=discord.Color.blue()
     )
+    # 🛠️ កែសម្រួល៖ ដាក់ទម្រង់ Lost : និង Win : ដាច់ពីគ្នា ច្បាស់ៗស្អាតល្អលើទូរស័ព្ទ
     embed.description = (
         f"**Coins :** {wallet_fmt} {emoji}\n"
         f"**Bank :** {bank_fmt} {emoji}\n\n"
         f"📊 **ស្ថិតិការលេង (Gameplay)**\n"
-        f"❌ ចាញ់ (Lost): {lost_fmt} ដង\n"
-        f"👑 ឈ្នះ (Win): {win_fmt} ដង"
+        f"**Lost :** {lost_fmt} ដង\n"
+        f"**Win :** {win_fmt} ដង"
     )
     
     embed.set_footer(text="សញ្ញាសម្គាល់កាក់ប្រចាំខ្លួនបង")
-    # លុប content=f"{emoji}" ចាស់ចេញរួចរាល់ ដើម្បីកុំឱ្យមានរូបកាក់លោតលើសនៅខាងលើ Embed
     await ctx.send(embed=embed)
 
 @bot.command(name="dep")
@@ -126,7 +123,7 @@ async def txo(ctx, p2: discord.Member, bet_amount: int):
 
     p1_bal, p2_bal = get_balance(p1.id), get_balance(p2.id)
     if p1_bal["wallet"] < bet_amount or p2_bal["wallet"] < bet_amount:
-        await ctx.send("❌ មានភាគីម្ខាងខ្វះលុយក្នុងកាបូប!")
+        await ctx.send("❌ 有ភាគីម្ខាងខ្វះលុយក្នុងកាបូប!")
         return
 
     await ctx.send(f"🎮 {p2.mention}! {p1.mention} បបួលលេង XO ភ្នាល់ចំនួន {format_number(bet_amount)} {emoji}!\n📌 **{p1.name}**=❌ | **{p2.name}**=⭕\nវាយពាក្យ accept ឬ decline (មានពេលឆ្លើយតប ៦០ វិនាទី)។")
@@ -149,7 +146,7 @@ async def txo(ctx, p2: discord.Member, bet_amount: int):
     match_num, turn, st_player = 1, p1, p1
     try:
         while True:
-            # 🛠️ កែសម្រួល៖ ទម្រង់ប្រអប់ Embed ស្អាត ត្រូវតាមទំហំអេក្រង់ទូរស័ព្ទដៃ និងលុយភ្នាល់/លុយឈ្នះត្រង់ជួរគ្នា
+            # 🛠️ បានកែសម្រួល៖ ប្តូរពីអក្សរថៃ មកជាអក្សរខ្មែរ "ការប្រកួត" ត្រឹមត្រូវវិញហើយ
             embed_vs = discord.Embed(
                 title="⚔️ ការប្រកួត 1vs1 ⚔️", 
                 color=discord.Color.orange()
@@ -203,7 +200,7 @@ async def txo(ctx, p2: discord.Member, bet_amount: int):
         get_balance(winner.id)["win"] += 1
         get_balance(loser.id)["lost"] += 1
         
-        # 🛠️ កែសម្រួល៖ ទម្រង់ប្រអប់បង្ហាញលទ្ធផលចុងក្រោយជា Embed ស្អាតលើទូរស័ព្ទ
+        # ទម្រង់ប្រអប់បង្ហាញលទ្ធផលចុងក្រោយជា Embed ស្អាតលើទូរស័ព្ទ
         embed_end = discord.Embed(
             title="🏁 បញ្ចប់ការប្រកួត 🏁", 
             color=discord.Color.green()
@@ -240,7 +237,7 @@ async def vsnpc(ctx, bet_amount: int):
     active_players.add(p1.id)
     pot = bet_amount * 2
 
-    # 🛠️ កែសម្រួល៖ ទម្រង់ប្រអប់ប្រកួតជាមួយ NPC ជា Embed ស្អាតត្រូវទំហំទូរស័ព្ទដៃដូចគ្នា
+    # 🛠️ បានកែសម្រួល៖ ប្តូរពីអក្សរថៃ មកជាអក្សរខ្មែរ "ការប្រកួត" ត្រឹមត្រូវវិញហើយ
     embed_npc = discord.Embed(
         title="⚔️ ការប្រកួត 1vs1 (ទល់នឹង NPC) ⚔️", 
         color=discord.Color.purple()
@@ -309,7 +306,6 @@ async def vsnpc(ctx, bet_amount: int):
     finally:
         active_players.discard(p1.id)
 
-# 🛠️ ប្រើប្រាស់លក្ខខណ្ឌត្រឹមត្រូវឥតខ្ចោះ ដើម្បីបញ្ឆេះបូតឱ្យដំណើរការ
 if __name__ == "__main__":
     keep_alive()
     token = os.getenv('DISCORD_TOKEN')
