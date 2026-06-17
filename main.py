@@ -327,8 +327,8 @@ async def vsnpc(ctx, amount: str):
                     win_sym = "⭕"
                     break
                     if board[move] != "⬜": 
-                    await ctx.send("❌ ប្រអប់នេះមានគេដៅរួចហើយ! សូមជ្រើសរើសលេខផ្សេង!")
-                    continue
+                             await ctx.send("❌ ប្រអប់នេះមានគេដៅរួចហើយ! សូមជ្រើសរើសលេខផ្សេង!")
+                             continue
                     
                 board[move] = "❌"
                 res = check_winner(board)
