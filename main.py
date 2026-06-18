@@ -20,7 +20,6 @@ def keep_alive():
 
 intents = discord.Intents.default()
 intents.message_content = True
-# កំណត់ Prefix ទៅជាទទេរ (វាយពាក្យសុទ្ធ គ្មានសញ្ញា !)
 bot = commands.Bot(command_prefix="", intents=intents, case_insensitive=True)
 
 user_balances = {}
@@ -103,40 +102,37 @@ async def withdraw(ctx, amount: str):
     bal["wallet"] += amt
     await ctx.send(f"✅ Successfully withdrew {format_number(amt)} {emoji} to your wallet via Tout!")
 
-# ប៊ូតុងប្រព័ន្ធផ្ទេរលុយ (Sender Confirmation)
-class TransferSenderView(discord.ui.View):
-    def __init__(self, sender, timeout=60.0):
+class QuickButtonView(discord.ui.View):
+    def __init__(self, allowed_user, timeout=60.0):
         super().__init__(timeout=timeout)
-        self.sender = sender
+        self.allowed_user = allowed_user
         self.value = None
 
-    @discord.ui.button(label="Accept (ប្រាកដណាស់) ✅", style=discord.ButtonStyle.green)
-    async def accept(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if interaction.user != self.sender:
-            await interaction.response.send_message("❌ ប៊ូតុងនេះសម្រាប់តែម្ចាស់លុយ (អ្នកផ្ញើ) ចុចបញ្ជាក់ប៉ុណ្ណោះ!", ephemeral=True)
+    async def handle_click(self, interaction: discord.Interaction, value: str):
+        if interaction.user != self.allowed_user:
+            await interaction.response.send_message("❌ អ្នកគ្មានសិទ្ធិចុចប៊ូតុងនេះទេ!", ephemeral=True)
             return
-        self.value = "accept"
-        await interaction.response.defer()
-        self.stop()
-        @discord.ui.button(label="Decline (បដិសេធ) ❌", style=discord.ButtonStyle.red)
-    async def decline(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if interaction.user != self.sender:
-            await interaction.response.send_message("❌ ប៊ូតុងនេះសម្រាប់តែម្ចាស់លុយ (អ្នកផ្ញើ) ចុចបដិសេធប៉ុណ្ណោះ!", ephemeral=True)
-            return
-        self.value = "decline"
+        self.value = value
         await interaction.response.defer()
         self.stop()
 
-@bot.command(name="tp")
+    @discord.ui.button(label="Accept ✅", style=discord.ButtonStyle.green)
+    async def accept_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.handle_click(interaction, "accept")
+
+    @discord.ui.button(label="Decline ❌", style=discord.ButtonStyle.red)
+    async def decline_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.handle_click(interaction, "decline")
+        @bot.command(name="tp")
 async def transfer_money(ctx, receiver: discord.Member, amount: int):
     sender = ctx.author
     if sender == receiver or amount <= 0:
-        await ctx.send("❌ Action មិនត្រឹមត្រូវ! អ្នកមិនអាចផ្ទេរលុយឱ្យខ្លួនឯង ឬដាក់ចំនួនដកបានទេ។")
+        await ctx.send("❌ Action មិនត្រឹមត្រូវ! អ្នកមិនអាចផ្ទេរលុយឱ្យខ្លួនឯង បានទេ។")
         return
     sender_bal = get_balance(sender.id)
     receiver_bal = get_balance(receiver.id)
     if sender_bal["wallet"] < amount:
-        await ctx.send(f"❌ {sender.display_name}, អ្នកមិនមានលុយគ្រប់គ្រាន់ក្នុងកាបូបទេ!")
+        await ctx.send(f"❌ {sender.display_name}, អ្នកមិនមានលុយគ្រប់គ្រាន់ទេ!")
         return
 
     embed_tp = discord.Embed(title="💸 ការផ្ទេរប្រាក់ (Money Transfer Pending)", color=discord.Color.gold())
@@ -144,28 +140,20 @@ async def transfer_money(ctx, receiver: discord.Member, amount: int):
         f"👤 អ្នកផ្ញើ (Sender): {sender.mention}\n"
         f"🎯 អ្នកទទួល (Receiver): {receiver.mention}\n"
         f"💵 ចំនួនទឹកប្រាក់: {format_number(amount)} {emoji}\n\n"
-        f"👉 {sender.mention} តើអ្នកប្រាកដជាចង់ផ្ទេរលុយនេះទៅឱ្យគេមែនទេ? សូមចុចប៊ូតុងខាងក្រោម៖\n(Timeout: 60s)"
+        f"👉 {sender.mention} តើអ្នកប្រាកដទេ? សូមចុចប៊ូតុងខាងក្រោម៖\n(Timeout: 60s)"
     )
     if sender.avatar:
         embed_tp.set_thumbnail(url=sender.avatar.url)
 
-    view = TransferSenderView(sender, timeout=60.0)
-    msg = await ctx.send(content=f"{sender.mention} សូមបញ្ជាក់ការផ្ទេរប្រាក់របស់អ្នក!", embed=embed_tp, view=view)
+    view = QuickButtonView(allowed_user=sender, timeout=60.0)
+    msg = await ctx.send(content=f"{sender.mention} សូមបញ្ជាក់ការផ្ទេរប្រាក់!", embed=embed_tp, view=view)
     await view.wait()
 
-    if view.value is None:
+    if view.value is None or view.value == "decline":
         for child in view.children: child.disabled = True
-        embed_tp.title = "⏰ ការផ្ទេរប្រាក់ (អស់ពេល)"
-        embed_tp.color = discord.Color.greyple()
-        embed_tp.description = f"❌ ការផ្ទេរប្រាក់ត្រូវបានលុបចោល ដោយសារគ្មានការឆ្លើយតបឆ្លងកាត់រយៈពេល ៦០ វិនាទី។"
-        await msg.edit(content=None, embed=embed_tp, view=view)
-        return
-
-    if view.value == "decline":
-        for child in view.children: child.disabled = True
-        embed_tp.title = "❌ ការផ្ទេរប្រាក់ (ត្រូវបានបដិសេធ)"
+        embed_tp.title = "❌ ការផ្ទេរប្រាក់ (ត្រូវបានលុបចោល/បដិសេធ)"
         embed_tp.color = discord.Color.red()
-        embed_tp.description = f"❌ {sender.mention} បានផ្លាស់ប្តូរចិត្ត និងចុចបដិសេធការផ្ទេរប្រាក់នេះ!"
+        embed_tp.description = "❌ ការផ្ទេរប្រាក់ត្រូវបានបដិសេធ ឬអស់ពេលឆ្លើយតប។"
         await msg.edit(content=None, embed=embed_tp, view=view)
         return
 
@@ -184,31 +172,7 @@ async def transfer_money(ctx, receiver: discord.Member, amount: int):
     )
     await msg.edit(content=None, embed=embed_success, view=view)
 
-# ប៊ូតុងយល់ព្រមលេងហ្គេម XO
-class AcceptDeclineView(discord.ui.View):
-    def __init__(self, p2, timeout=60.0):
-        super().__init__(timeout=timeout)
-        self.p2 = p2
-        self.value = None
-
-    @discord.ui.button(label="Accept", style=discord.ButtonStyle.green)
-    async def accept(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if interaction.user != self.p2:
-            await interaction.response.send_message("❌ ប៊ូតុងនេះសម្រាប់តែអ្នកដែលគេបបួលលេងប៉ុណ្ណោះ!", ephemeral=True)
-            return
-        self.value = "accept"
-        await interaction.response.defer()
-        self.stop()
-
-    @discord.ui.button(label="Decline", style=discord.ButtonStyle.red)
-    async def decline(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if interaction.user != self.p2:
-            await interaction.response.send_message("❌ ប៊ូតុងនេះសម្រាប់តែអ្នកដែលគេបបួលលេងប៉ុណ្ណោះ!", ephemeral=True)
-            return
-        self.value = "decline"
-        await interaction.response.defer()
-        self.stop()
-        # ==================== Game Commands (Player vs Player) ====================
+# ==================== Game Commands (Player vs Player) ====================
 @bot.command(name="txo")
 async def txo(ctx, p2: discord.Member, bet_amount: int):
     p1 = ctx.author
@@ -235,7 +199,7 @@ async def txo(ctx, p2: discord.Member, bet_amount: int):
         f"👉 Click a button below to respond:"
     )
 
-    view = AcceptDeclineView(p2, timeout=60.0)
+    view = QuickButtonView(allowed_user=p2, timeout=60.0)
     msg = await ctx.send(embed=embed_invite, view=view)
     await view.wait()
 
@@ -247,7 +211,6 @@ async def txo(ctx, p2: discord.Member, bet_amount: int):
 
     for child in view.children: child.disabled = True
     await msg.edit(content=f"✅ {p2.display_name} accepted the match!", view=view)
-
     active_players.add(p1.id)
     active_players.add(p2.id)
     p1_bal["wallet"] -= bet_amount
@@ -277,7 +240,6 @@ async def txo(ctx, p2: discord.Member, bet_amount: int):
                     await ctx.send(f"⏰ {turn.display_name} went AFK! Auto-defeat triggered!")
                     win_sym = '⭕' if turn == p1 else '❌'
                     break
-                
                 if board[move] != "⬜": 
                     await ctx.send("❌ This spot is already taken!")
                     continue
