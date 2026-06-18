@@ -1,8 +1,9 @@
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 import asyncio
 import os
 import random
+import json
 from flask import Flask
 from threading import Thread
 
@@ -22,10 +23,32 @@ intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix="", intents=intents, case_insensitive=True)
 
-user_balances = {}
+# 🔴 ផ្លូវទៅកាន់ Volume រក្សាទុកលុយមិនឱ្យបាត់បង់លើ Railway
+DATA_FILE = "/data/balances.json"
+
+def load_data():
+    if os.path.exists(DATA_FILE):
+        try:
+            with open(DATA_FILE, "r") as f:
+                return json.load(f)
+        except:
+            return {}
+    return {}
+
+def save_data():
+    os.makedirs(os.path.dirname(DATA_FILE), exist_ok=True)
+    with open(DATA_FILE, "w") as f:
+        json.dump(user_balances, f, indent=4)
+
+user_balances = load_data()
 active_players = set()
 
-# រូប Emoji លុយពិតប្រាកដរបស់បង
+@tasks.loop(minutes=5.0)
+async def auto_save_backup():
+    save_data()
+    print("💾 [Auto-Save] Balances backed up to Volume successfully!")
+
+# រូប Emoji ពិតប្រាកដរបស់បង
 emoji = "<:emoji_5:1516480628370047250>" 
 game_icon = "🎮"
 
@@ -33,12 +56,15 @@ def format_number(num):
     return "{:,}".format(num)
 
 def get_balance(user_id):
-    if user_id not in user_balances:
-        user_balances[user_id] = {"wallet": 100, "bank": 0, "win": 0, "lost": 0}
-    if "win" not in user_balances[user_id]:
-        user_balances[user_id]["win"] = 0
-        user_balances[user_id]["lost"] = 0
-    return user_balances[user_id]
+    uid = str(user_id)
+    if uid not in user_balances:
+        user_balances[uid] = {"wallet": 100, "bank": 0, "win": 0, "lost": 0}
+        save_data()
+    if "win" not in user_balances[uid]:
+        user_balances[uid]["win"] = 0
+        user_balances[uid]["lost"] = 0
+        save_data()
+    return user_balances[uid]
 
 def draw_board(board):
     lines = []
@@ -51,14 +77,15 @@ def check_winner(b):
         if b[i] == b[i+1] == b[i+2] != "⬜": return b[i]
     for i in range(3):
         if b[i] == b[i+3] == b[i+6] != "⬜": return b[i]
-    if b[0] == b[4] == b[8] != "⬜": return b[0]
-    if b[2] == b[4] == b[6] != "⬜": return b[2]
+    if b == b == b != "⬜": return b
+    if b == b == b != "⬜": return b
     if "⬜" not in b: return "Tie"
     return None
 
 @bot.event
 async def on_ready(): 
     print(f'📢 Bot XO Online: {bot.user.name}')
+    auto_save_backup.start()
 
 # ==================== Economy Commands ====================
 @bot.command(name="tbal")
@@ -77,6 +104,9 @@ async def tbal(ctx):
         f"**Lost :** {lost_fmt} times\n"
         f"**Win :** {win_fmt} times"
     )
+    # 🔴 បន្ថែមរូប Thumbnail Profile នៅខាងស្តាំដៃខាងលើ
+    if ctx.author.avatar:
+        embed.set_thumbnail(url=ctx.author.avatar.url)
     embed.set_footer(text="Your personal coin profile")
     await ctx.send(embed=embed)
 
@@ -84,23 +114,55 @@ async def tbal(ctx):
 async def deposit(ctx, amount: str):
     bal = get_balance(ctx.author.id)
     amt = bal["wallet"] if amount.lower() == "all" else (int(amount) if amount.isdigit() else 0)
+    
     if amt <= 0 or bal["wallet"] < amt:
-        await ctx.send("❌ Invalid amount or insufficient coins in your wallet!")
+        embed_error = discord.Embed(title="❌ Transaction Failed", description="Invalid amount or insufficient coins in your wallet!", color=discord.Color.red())
+        await ctx.send(embed=embed_error)
         return
+    
     bal["wallet"] -= amt
     bal["bank"] += amt
-    await ctx.send(f"✅ Successfully deposited {format_number(amt)} {emoji} into your bank via Tbank!")
+    save_data()
+    
+    # 🔴 ដំណើរការប្រអប់ Embed អង់គ្លេស ពេលដាក់លុយជោគជ័យ
+    embed_success = discord.Embed(title="🏦 Deposit Successful", color=discord.Color.green())
+    embed_success.description = (
+        f"👤 Account: {ctx.author.mention}\n"
+        f"📥 Deposited: +{format_number(amt)} {emoji} into Bank\n"
+        f"----------------------------------------\n"
+        f"💰 Current Wallet: {format_number(bal['wallet'])} {emoji}"
+    )
+    if ctx.author.avatar:
+        embed_success.set_thumbnail(url=ctx.author.avatar.url)
+    embed_success.set_footer(text="XO Online Bank System")
+    await ctx.send(embed=embed_success)
 
 @bot.command(name="Tout")
 async def withdraw(ctx, amount: str):
     bal = get_balance(ctx.author.id)
     amt = bal["bank"] if amount.lower() == "all" else (int(amount) if amount.isdigit() else 0)
+    
     if amt <= 0 or bal["bank"] < amt:
-        await ctx.send("❌ Invalid amount or insufficient coins in your bank!")
+        embed_error = discord.Embed(title="❌ Transaction Failed", description="Invalid amount or insufficient coins in your bank!", color=discord.Color.red())
+        await ctx.send(embed=embed_error)
         return
+    
     bal["bank"] -= amt
     bal["wallet"] += amt
-    await ctx.send(f"✅ Successfully withdrew {format_number(amt)} {emoji} to your wallet via Tout!")
+    save_data()
+    
+    # 🔴 ដំណើរការប្រអប់ Embed អង់គ្លេស ពេលដកលុយជោគជ័យ
+    embed_success = discord.Embed(title="💸 Withdraw Successful", color=discord.Color.blue())
+    embed_success.description = (
+        f"👤 Account: {ctx.author.mention}\n"
+        f"📤 Withdrew: +{format_number(amt)} {emoji} to Wallet\n"
+        f"----------------------------------------\n"
+        f"💰 Current Bank: {format_number(bal['bank'])} {emoji}"
+    )
+    if ctx.author.avatar:
+        embed_success.set_thumbnail(url=ctx.author.avatar.url)
+    embed_success.set_footer(text="XO Online Bank System")
+    await ctx.send(embed=embed_success)
 
 class QuickButtonView(discord.ui.View):
     def __init__(self, allowed_user, timeout=60.0):
@@ -110,14 +172,11 @@ class QuickButtonView(discord.ui.View):
 
     async def handle_click(self, interaction: discord.Interaction, value: str):
         if interaction.user != self.allowed_user:
-            await interaction.response.send_message("❌ អ្នកគ្មានសិទ្ធិចុចប៊ូតុងនេះទេ!", ephemeral=True)
+            await interaction.response.send_message("❌ You are not allowed to use this button!", ephemeral=True)
             return
         self.value = value
         await interaction.response.defer()
         self.stop()
-
-   # 🔴 ពិនិត្យមើលកូដពីលើ @bot.command(name="tp") ៖ 
-# រាល់ឈ្មោះប៊ូតុងទាំងនេះ ត្រូវដកឃ្លាឱ្យចំលំដាប់បែបនេះ៖
 
     @discord.ui.button(label="Accept ✅", style=discord.ButtonStyle.green)
     async def accept_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -126,55 +185,53 @@ class QuickButtonView(discord.ui.View):
     @discord.ui.button(label="Decline ❌", style=discord.ButtonStyle.red)
     async def decline_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self.handle_click(interaction, "decline")
-
-# 🔴 ចំណុចសំខាន់៖ ពាក្យ @bot.command ត្រូវតែនៅជាប់ជញ្ជាំងខាងឆ្វេងបង្អស់ (គ្មានដកឃ្លាឡើយ!)
-@bot.command(name="tp")
+        @bot.command(name="tp")
 async def transfer_money(ctx, receiver: discord.Member, amount: int):
-    sender = ctx.author  # 🔴 ពិនិត្យមើល៖ ដកឃ្លា ៤ ដង (ឬ ១ Tab) ពីជញ្ជាំងខាងឆ្វេង
-    if sender == receiver or amount <= 0:  # 🔴 ត្រូវដកឃ្លាខិតចូលឱ្យ "ស្មើគ្នា" ជាមួយបន្ទាត់ខាងលើ! (ហាមដកឃ្លាច្រើនជាង)
-        await ctx.send("❌ Action មិនត្រឹមត្រូវ! អ្នកមិនអាចផ្ទេរលុយឱ្យខ្លួនឯង បានទេ។")
+    sender = ctx.author
+    if sender == receiver or amount <= 0:
+        await ctx.send("❌ Invalid action! You cannot transfer to yourself.")
         return
     sender_bal = get_balance(sender.id)
     receiver_bal = get_balance(receiver.id)
-    
-    # 🔴 ពិនិត្យមើលបន្ទាត់ខាងក្រោមនេះ៖ ត្រូវតែខិតចូលក្នុងឱ្យស្មើគេ បែបនេះដាច់ខាត!
     if sender_bal["wallet"] < amount:
-        await ctx.send(f"❌ {sender.display_name}, អ្នកមិនមានលុយគ្រប់គ្រាន់ទេ!")
+        await ctx.send(f"❌ {sender.display_name}, you do not have enough coins!")
         return
-    embed_tp = discord.Embed(title="💸 ការផ្ទេរប្រាក់ (Money Transfer Pending)", color=discord.Color.gold())
+
+    embed_tp = discord.Embed(title="💸 Money Transfer Pending", color=discord.Color.gold())
     embed_tp.description = (
-        f"👤 អ្នកផ្ញើ (Sender): {sender.mention}\n"
-        f"🎯 អ្នកទទួល (Receiver): {receiver.mention}\n"
-        f"💵 ចំនួនទឹកប្រាក់: {format_number(amount)} {emoji}\n\n"
-        f"👉 {sender.mention} តើអ្នកប្រាកដទេ? សូមចុចប៊ូតុងខាងក្រោម៖\n(Timeout: 60s)"
+        f"👤 Sender: {sender.mention}\n"
+        f"🎯 Receiver: {receiver.mention}\n"
+        f"💵 Amount: {format_number(amount)} {emoji}\n\n"
+        f"👉 {sender.mention}, are you sure you want to transfer? Click a button below:\n(Timeout: 60s)"
     )
     if sender.avatar:
         embed_tp.set_thumbnail(url=sender.avatar.url)
 
     view = QuickButtonView(allowed_user=sender, timeout=60.0)
-    msg = await ctx.send(content=f"{sender.mention} សូមបញ្ជាក់ការផ្ទេរប្រាក់!", embed=embed_tp, view=view)
+    msg = await ctx.send(content=f"{sender.mention} Please confirm your transfer!", embed=embed_tp, view=view)
     await view.wait()
 
     if view.value is None or view.value == "decline":
         for child in view.children: child.disabled = True
-        embed_tp.title = "❌ ការផ្ទេរប្រាក់ (ត្រូវបានលុបចោល/បដិសេធ)"
+        embed_tp.title = "❌ Transfer Cancelled / Expired"
         embed_tp.color = discord.Color.red()
-        embed_tp.description = "❌ ការផ្ទេរប្រាក់ត្រូវបានបដិសេធ ឬអស់ពេលឆ្លើយតប។"
+        embed_tp.description = "❌ The transaction was declined or timed out."
         await msg.edit(content=None, embed=embed_tp, view=view)
         return
 
     for child in view.children: child.disabled = True
     sender_bal["wallet"] -= amount
     receiver_bal["wallet"] += amount
+    save_data()
 
-    embed_success = discord.Embed(title="✅ ផ្ទេរប្រាក់ជោគជ័យ! (Transfer Completed)", color=discord.Color.green())
+    embed_success = discord.Embed(title="✅ Transfer Completed", color=discord.Color.green())
     embed_success.description = (
-        f"🎉 ការផ្ទេរប្រាក់ត្រូវបានបញ្ចប់ដោយជោគជ័យ!\n"
+        f"🎉 Transaction finished successfully!\n"
         f"----------------------------------------\n"
         f"📉 Sender: {sender.mention} (-{format_number(amount)} {emoji})\n"
         f"📈 Receiver: {receiver.mention} (+{format_number(amount)} {emoji})\n"
         f"----------------------------------------\n"
-        f"💰 សមតុល្យក្នុងកាបូបរបស់អ្នកផ្ញើ៖ {format_number(sender_bal['wallet'])} {emoji}"
+        f"💰 Sender's Remaining Wallet: {format_number(sender_bal['wallet'])} {emoji}"
     )
     await msg.edit(content=None, embed=embed_success, view=view)
 
@@ -217,10 +274,12 @@ async def txo(ctx, p2: discord.Member, bet_amount: int):
 
     for child in view.children: child.disabled = True
     await msg.edit(content=f"✅ {p2.display_name} accepted the match!", view=view)
+
     active_players.add(p1.id)
     active_players.add(p2.id)
     p1_bal["wallet"] -= bet_amount
     p2_bal["wallet"] -= bet_amount
+    save_data()
     pot = bet_amount * 2
     match_num, turn, st_player = 1, p1, p1
 
@@ -272,6 +331,7 @@ async def txo(ctx, p2: discord.Member, bet_amount: int):
         get_balance(winner.id)["wallet"] += pot
         get_balance(winner.id)["win"] += 1
         get_balance(loser.id)["lost"] += 1
+        save_data()
         
         embed_end = discord.Embed(title="🏁 Match Concluded 🏁", color=discord.Color.green())
         embed_end.description = (
@@ -312,6 +372,7 @@ async def vsnpc(ctx, amount: str):
     )
     await ctx.send(embed=embed_npc)
     p1_bal["wallet"] -= bet_amount
+    save_data()
 
     try:
         while True:
@@ -364,6 +425,8 @@ async def vsnpc(ctx, amount: str):
         else:
             p1_bal["lost"] += 1
             await ctx.send(f"💸 {p1.mention} lost to NPC and dropped {format_number(bet_amount)} {emoji}!")
+        
+        save_data()
     finally:
         active_players.discard(p1.id)
 
