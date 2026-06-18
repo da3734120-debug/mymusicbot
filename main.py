@@ -123,18 +123,19 @@ class QuickButtonView(discord.ui.View):
     @discord.ui.button(label="Decline ❌", style=discord.ButtonStyle.red)
     async def decline_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self.handle_click(interaction, "decline")
-        @bot.command(name="tp")
-        async def transfer_money(ctx, receiver: discord.Member, amount: int):
-          sender = ctx.author
-          if sender == receiver or amount <= 0:
-           await ctx.send("❌ Action មិនត្រឹមត្រូវ! អ្នកមិនអាចផ្ទេរលុយឱ្យខ្លួនឯង បានទេ។")
+       @bot.command(name="tp")
+async def transfer_money(ctx, receiver: discord.Member, amount: int):
+    sender = ctx.author
+    if sender == receiver or amount <= 0:
+        await ctx.send("❌ Action មិនត្រឹមត្រូវ! អ្នកមិនអាចផ្ទេរលុយឱ្យខ្លួនឯង បានទេ។")
         return
     sender_bal = get_balance(sender.id)
     receiver_bal = get_balance(receiver.id)
+    
+    # 🔴 ពិនិត្យមើលបន្ទាត់ខាងក្រោមនេះ៖ ត្រូវតែខិតចូលក្នុងឱ្យស្មើគេ បែបនេះដាច់ខាត!
     if sender_bal["wallet"] < amount:
         await ctx.send(f"❌ {sender.display_name}, អ្នកមិនមានលុយគ្រប់គ្រាន់ទេ!")
         return
-
     embed_tp = discord.Embed(title="💸 ការផ្ទេរប្រាក់ (Money Transfer Pending)", color=discord.Color.gold())
     embed_tp.description = (
         f"👤 អ្នកផ្ញើ (Sender): {sender.mention}\n"
