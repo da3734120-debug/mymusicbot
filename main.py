@@ -103,7 +103,7 @@ async def withdraw(ctx, amount: str):
     bal["wallet"] += amt
     await ctx.send(f"✅ Successfully withdrew {format_number(amt)} {emoji} to your wallet via Tout!")
 
-# ប៊ូតុងប្រព័ន្ធផ្ទេរលុយ (សម្រាប់តែអ្នកផ្ញើ ឬម្ចាស់លុយចុចបញ្ជាក់ប៉ុណ្ណោះ)
+# ប៊ូតុងប្រព័ន្ធផ្ទេរលុយ (កែប្រែប្រព័ន្ធ Interaction រួចរាល់)
 class TransferSenderView(discord.ui.View):
     def __init__(self, sender, timeout=60.0):
         super().__init__(timeout=timeout)
@@ -116,6 +116,7 @@ class TransferSenderView(discord.ui.View):
             await interaction.response.send_message("❌ ប៊ូតុងនេះសម្រាប់តែម្ចាស់លុយ (អ្នកផ្ញើ) ចុចបញ្ជាក់ប៉ុណ្ណោះ!", ephemeral=True)
             return
         self.value = "accept"
+        await interaction.response.defer() # 🔴 ប្រាប់ Discord ថាទទួលបានការចុចហើយ ដើម្បីកុំឱ្យលោត Error
         self.stop()
 
     @discord.ui.button(label="Decline (បដិសេធ) ❌", style=discord.ButtonStyle.red)
@@ -124,6 +125,91 @@ class TransferSenderView(discord.ui.View):
             await interaction.response.send_message("❌ ប៊ូតុងនេះសម្រាប់តែម្ចាស់លុយ (អ្នកផ្ញើ) ចុចបដិសេធប៉ុណ្ណោះ!", ephemeral=True)
             return
         self.value = "decline"
+        await interaction.response.defer() # 🔴 ប្រាប់ Discord ថាទទួលបានការចុចហើយ ដើម្បីកុំឱ្យលោត Error
+        self.stop()
+
+@bot.command(name="tp")
+async def transfer_money(ctx, receiver: discord.Member, amount: int):
+    sender = ctx.author
+    if sender == receiver or amount <= 0:
+        await ctx.send("❌ Action មិនត្រឹមត្រូវ! អ្នកមិនអាចផ្ទេរលុយឱ្យខ្លួនឯង ឬដាក់ចំនួនដកបានទេ។")
+        return
+    sender_bal = get_balance(sender.id)
+    receiver_bal = get_balance(receiver.id)
+    if sender_bal["wallet"] < amount:
+        await ctx.send(f"❌ {sender.display_name}, អ្នកមិនមានលុយគ្រប់គ្រាន់ក្នុងកាបូបទេ!")
+        return
+
+    # បង្កើត Embed សួរទៅកាន់អ្នកផ្ញើ
+    embed_tp = discord.Embed(title="💸 ការផ្ទេរប្រាក់ (Money Transfer Pending)", color=discord.Color.gold())
+    embed_tp.description = (
+        f"👤 អ្នកផ្ញើ (Sender): {sender.mention}\n"
+        f"🎯 អ្នកទទួល (Receiver): {receiver.mention}\n"
+        f"💵 ចំនួនទឹកប្រាក់: {format_number(amount)} {emoji}\n\n"
+        f"👉 {sender.mention} តើអ្នកប្រាកដជាចង់ផ្ទេរលុយនេះទៅឱ្យគេមែនទេ? សូមចុចប៊ូតុងខាងក្រោម៖\n(Timeout: 60s)"
+    )
+    if sender.avatar:
+        embed_tp.set_thumbnail(url=sender.avatar.url)
+
+    view = TransferSenderView(sender, timeout=60.0)
+    msg = await ctx.send(content=f"{sender.mention} សូមបញ្ជាក់ការផ្ទេរប្រាក់របស់អ្នក!", embed=embed_tp, view=view)
+    await view.wait()
+
+    if view.value is None:
+        for child in view.children: child.disabled = True
+        embed_tp.title = "⏰ ការផ្ទេរប្រាក់ (អស់ពេល)"
+        embed_tp.color = discord.Color.greyple()
+        embed_tp.description = f"❌ การផ្ទេរប្រាក់ត្រូវបានលុបចោល ដោយសារគ្មានការឆ្លើយតបឆ្លងកាត់រយៈពេល ៦០ វិនាទី។"
+        await msg.edit(content=None, embed=embed_tp, view=view)
+        return
+
+    if view.value == "decline":
+        for child in view.children: child.disabled = True
+        embed_tp.title = "❌ การផ្ទេរប្រាក់ (ត្រូវបានបដិសេធ)"
+        embed_tp.color = discord.Color.red()
+        embed_tp.description = f"❌ {sender.mention} បានផ្លាស់ប្តូរចិត្ត និងចុចបដិសេធការផ្ទេរប្រាក់នេះ!"
+        await msg.edit(content=None, embed=embed_tp, view=view)
+        return
+
+    # នៅពេលអ្នកផ្ញើចុច Accept ទើបប្រព័ន្ធកាត់លុយផ្ទេរជាផ្លូវការ
+    for child in view.children: child.disabled = True
+    sender_bal["wallet"] -= amount
+    receiver_bal["wallet"] += amount
+
+    embed_success = discord.Embed(title="✅ ផ្ទេរប្រាក់ជោគជ័យ! (Transfer Completed)", color=discord.Color.green())
+    embed_success.description = (
+        f"🎉 ការផ្ទេរប្រាក់ត្រូវបានបញ្ចប់ដោយជោគជ័យ!\n"
+        f"----------------------------------------\n"
+        f"📉 Sender: {sender.mention} (-{format_number(amount)} {emoji})\n"
+        f"📈 Receiver: {receiver.mention} (+{format_number(amount)} {emoji})\n"
+        f"----------------------------------------\n"
+        f"💰 សមតុល្យក្នុងកាបូបរបស់អ្នកផ្ញើ៖ {format_number(sender_bal['wallet'])} {emoji}"
+    )
+    await msg.edit(content=None, embed=embed_success, view=view)
+
+# ប៊ូតុងយល់ព្រមលេងហ្គេម XO
+class AcceptDeclineView(discord.ui.View):
+    def __init__(self, p2, timeout=60.0):
+        super().__init__(timeout=timeout)
+        self.p2 = p2
+        self.value = None
+
+    @discord.ui.button(label="Accept", style=discord.ButtonStyle.green)
+    async def accept(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user != self.p2:
+            await interaction.response.send_message("❌ ប៊ូតុងនេះសម្រាប់តែអ្នកដែលគេបបួលលេងប៉ុណ្ណោះ!", ephemeral=True)
+            return
+        self.value = "accept"
+        await interaction.response.defer()
+        self.stop()
+
+    @discord.ui.button(label="Decline", style=discord.ButtonStyle.red)
+    async def decline(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user != self.p2:
+            await interaction.response.send_message("❌ ប៊ូតុងនេះសម្រាប់តែអ្នកដែលគេបបួលលេងប៉ុណ្ណោះ!", ephemeral=True)
+            return
+        self.value = "decline"
+        await interaction.response.defer()
         self.stop()
 
 @bot.command(name="tp")
