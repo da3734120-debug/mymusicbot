@@ -471,7 +471,7 @@ class QuickButtonView(discord.ui.View):
         super().__init__(timeout=timeout)
         self.allowed_user = allowed_user
         self.value = None
-        async def handle_click(self, interaction: discord.Interaction, value: str):
+     async def handle_click(self, interaction: discord.Interaction, value: str):
         if interaction.user.id!= self.allowed_user.id:
             await interaction.response.send_message("❌ You are not allowed to use this button!", ephemeral=True)
             return
