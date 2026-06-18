@@ -672,7 +672,8 @@ async def vsnpc(ctx, amount: str):
         active_players.discard(p1.id)
 
 # ==================== UI View Components ====================
-class QuickButtonView(discord.ui.View):def __init__(self, allowed_user, timeout=60.0):
+class QuickButtonView(discord.ui.View):
+    def __init__(self, allowed_user, timeout=60.0):
         super().__init__(timeout=timeout)
         self.allowed_user = allowed_user
         self.value = None
