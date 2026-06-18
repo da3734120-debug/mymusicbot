@@ -432,8 +432,9 @@ async def vsnpc(ctx, amount: str):
                     if res == "Tie": tie = True
                     else: win_sym = res
                     break
-                await board_msg.
-                # ==================== Game Commands (Player vs Player) ====================
+                
+                # 🛠️ នេះជាបន្ទាត់ទី 435 ដែលបងត្រូវកែ (កែទៅជាបន្ទាត់ខាងក្រោមនេះ)៖
+                await board_msg.edit(content=f"🟢 Your turn (❌):\n```{draw_board(board)}```")
 @bot.command(name="txo")
 async def txo(ctx, p2: discord.Member, bet_amount: int):
     p1 = ctx.author
