@@ -188,7 +188,7 @@ async def withdraw(ctx, amount: str):
     embed_success.description = (
         f"👤 Account: {ctx.author.mention}\n"
         f"📤 Withdrew: +{format_number(amt)} {emoji} to Wallet\n"
-        f"----------------------------------------\n"
+        f"--------------------------------\n"
         f"💰 Current Bank: {format_number(bal['bank'])} {emoji}"
     )
     if ctx.author.avatar:
