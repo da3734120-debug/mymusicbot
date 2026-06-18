@@ -116,6 +116,9 @@ class QuickButtonView(discord.ui.View):
         await interaction.response.defer()
         self.stop()
 
+   # 🔴 ពិនិត្យមើលកូដពីលើ @bot.command(name="tp") ៖ 
+# រាល់ឈ្មោះប៊ូតុងទាំងនេះ ត្រូវដកឃ្លាឱ្យចំលំដាប់បែបនេះ៖
+
     @discord.ui.button(label="Accept ✅", style=discord.ButtonStyle.green)
     async def accept_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self.handle_click(interaction, "accept")
@@ -123,9 +126,11 @@ class QuickButtonView(discord.ui.View):
     @discord.ui.button(label="Decline ❌", style=discord.ButtonStyle.red)
     async def decline_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self.handle_click(interaction, "decline")
-    @bot.command(name="tp")
-    async def transfer_money(ctx, receiver: discord.Member, amount: int):
-      sender = ctx.author
+
+# 🔴 ចំណុចសំខាន់៖ ពាក្យ @bot.command ត្រូវតែនៅជាប់ជញ្ជាំងខាងឆ្វេងបង្អស់ (គ្មានដកឃ្លាឡើយ!)
+@bot.command(name="tp")
+async def transfer_money(ctx, receiver: discord.Member, amount: int):
+    sender = ctx.author
        if sender == receiver or amount <= 0:
           await ctx.send("❌ Action មិនត្រឹមត្រូវ! អ្នកមិនអាចផ្ទេរលុយឱ្យខ្លួនឯង បានទេ។")
           return
