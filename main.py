@@ -436,6 +436,7 @@ async def vsnpc(ctx, amount: str):
                 # 🛠️ នេះជាបន្ទាត់ទី 435 ដែលបងត្រូវកែ (កែទៅជាបន្ទាត់ខាងក្រោមនេះ)៖
                 await board_msg.edit(content=f"🟢 Your turn (❌):\n```{draw_board(board)}```")
 # ==================== Game Commands (Player vs Player) ====================
+# ==================== Game Commands (Player vs Player) ====================
 @bot.command(name="txo")
 async def txo(ctx, p2: discord.Member, bet_amount: int):
     p1 = ctx.author
@@ -484,6 +485,7 @@ async def txo(ctx, p2: discord.Member, bet_amount: int):
     match_num, turn, st_player = 1, p1, p1
 
     try:
+        # Loop ធំសម្រាប់ Rematch ក្តារថ្មី (Round #1, #2...) ពេលលទ្ធផលស្មើគ្នា (Tie)
         while True:
             embed_vs = discord.Embed(title="⚔️ Match 1vs1 Active ⚔️", color=discord.Color.orange())
             embed_vs.description = (
@@ -493,11 +495,13 @@ async def txo(ctx, p2: discord.Member, bet_amount: int):
                 f"🎁 Winning Pool   : {format_number(pot)} {emoji}\n"
                 f"----------------------------------------"
             )
-            await ctx.send(embed=embed_vs)
+            vs_msg = await ctx.send(embed=embed_vs)
 
             board, tie, win_sym = ["⬜"] * 9, False, None
+            # បង្កើតសារក្តារខៀនតែម្តងគត់ក្នុងជុំនីមួយៗ
             board_msg = await ctx.send(f"{turn.mention}'s turn ({'❌' if turn == p1 else '⭕'}):\n```{draw_board(board)}```\n⏰ *5 minutes timeout!*")
             
+            # Loop តូចសម្រាប់ដេញវេនគ្នាចុច ❌ និង ⭕ (លេងដោយការ Edit មិនផ្ញើសារថ្មី)
             while True:
                 try:
                     msg_turn = await bot.wait_for('message', check=lambda m: m.author.id == turn.id and m.channel.id == ctx.channel.id and m.content.isdigit() and 1 <= int(m.content) <= 9, timeout=300.0)
@@ -520,13 +524,22 @@ async def txo(ctx, p2: discord.Member, bet_amount: int):
                 res = check_winner(board)
                 if res:
                     if res == "Tie": tie = True
-                    else: win_sym = res
+                        else: win_sym = res
                     break
+                
+                # ប្តូរវេន រួចធ្វើការ Edit លើក្តារខៀនចាស់ (ស្អាតល្អ មិនណែនឆាត)
                 turn = p2 if turn == p1 else p1
                 await board_msg.edit(content=f"{turn.mention}'s turn ({'❌' if turn == p1 else '⭕'}):\n```{draw_board(board)}```\n⏰ *5 minutes timeout!*")
                 
+            # លុបសារក្តារចាស់ចេញ ពេលចប់ជុំនីមួយៗ
+            try: await board_msg.delete()
+            except: pass
+            try: await vs_msg.delete()
+            except: pass
+
             if tie:
-                await ctx.send(f"🏁 It's a Tie!\n```{draw_board(board)}```\n🤝 Rematching...")
+                # បើស្មើ វានឹងផ្ញើសារប្រាប់ រួចរុញទៅជុំបន្ទាប់ (Rematch ក្តារថ្មី)
+                await ctx.send(f"🏁 It's a Tie!\n```{draw_board(board)}```\n🤝 Rematching to next round...")
                 match_num += 1
                 st_player = p2 if st_player == p1 else p1
                 turn = st_player
@@ -583,6 +596,7 @@ async def vsnpc(ctx, amount: str):
     save_data()
 
     try:
+        # Loop ធំសម្រាប់ Rematch ជាមួយ Bot ពេលលទ្ធផលស្មើគ្នា (Tie)
         while True:
             await ctx.send(f"⚔️ Match vs NPC #{match_num}!")
             board, tie, win_sym = ["⬜"] * 9, False, None
@@ -613,7 +627,7 @@ async def vsnpc(ctx, amount: str):
                     else: win_sym = res
                     break
 
-                # 🤖 វេនរបស់ AI Smart NPC ឆ្លាតវៃ
+                # 🤖 វេនរបស់ AI Smart NPC ឆ្លាតវៃ (Edit ក្តារខៀនចាស់ដដែល)
                 await board_msg.edit(content="🤖 NPC is thinking...\n```" + draw_board(board) + "```")
                 await asyncio.sleep(1.0)
                 
@@ -625,7 +639,11 @@ async def vsnpc(ctx, amount: str):
                     else: win_sym = res
                     break
                 await board_msg.edit(content=f"🟢 Your turn (❌):\n```{draw_board(board)}```")
-                    
+            
+            # លុបក្តារចាស់ចោល ពេលលេងចប់ ១ ក្តារ
+            try: await board_msg.delete()
+            except: pass
+
             if tie:
                 await ctx.send(f"🏁 Tied with NPC!\n```{draw_board(board)}```\n🤝 Rematching...")
                 match_num += 1
@@ -648,8 +666,7 @@ async def vsnpc(ctx, amount: str):
         active_players.discard(p1.id)
 
 # ==================== UI View Components ====================
-class QuickButtonView(discord.ui.View):
-    def __init__(self, allowed_user, timeout=60.0):
+class QuickButtonView(discord.ui.View):def __init__(self, allowed_user, timeout=60.0):
         super().__init__(timeout=timeout)
         self.allowed_user = allowed_user
         self.value = None
