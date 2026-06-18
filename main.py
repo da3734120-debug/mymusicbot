@@ -124,10 +124,10 @@ class QuickButtonView(discord.ui.View):
     async def decline_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self.handle_click(interaction, "decline")
        @bot.command(name="tp")
-async def transfer_money(ctx, receiver: discord.Member, amount: int):
-    sender = ctx.author
-    if sender == receiver or amount <= 0:
-        await ctx.send("❌ Action មិនត្រឹមត្រូវ! អ្នកមិនអាចផ្ទេរលុយឱ្យខ្លួនឯង បានទេ។")
+       async def transfer_money(ctx, receiver: discord.Member, amount: int):
+         sender = ctx.author
+         if sender == receiver or amount <= 0:
+          await ctx.send("❌ Action មិនត្រឹមត្រូវ! អ្នកមិនអាចផ្ទេរលុយឱ្យខ្លួនឯង បានទេ។")
         return
     sender_bal = get_balance(sender.id)
     receiver_bal = get_balance(receiver.id)
