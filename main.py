@@ -436,6 +436,12 @@ async def vsnpc(ctx, amount: str):
                 # 🛠️ នេះជាបន្ទាត់ទី 435 ដែលបងត្រូវកែ (កែទៅជាបន្ទាត់ខាងក្រោមនេះ)៖
                 await board_msg.edit(content=f"🟢 Your turn (❌):\n```{draw_board(board)}```")
 # ==================== Game Commands (Player vs Player) ====================
+# 🛠️ នេះជាកូដបិទបញ្ចប់ Command tp ឱ្យបានត្រឹមត្រូវ (ដើម្បីកុំឱ្យជួប SyntaxError)
+    except Exception as e:
+        print(f"Error in transfer: {e}")
+    finally:
+        pass
+
 # ==================== Game Commands (Player vs Player) ====================
 @bot.command(name="txo")
 async def txo(ctx, p2: discord.Member, bet_amount: int):
