@@ -530,7 +530,7 @@ async def txo(ctx, p2: discord.Member, bet_amount: int):
                 res = check_winner(board)
                 if res:
                     if res == "Tie": tie = True
-                        else: win_sym = res
+                    else: win_sym = res
                     break
                 
                 # ប្តូរវេន រួចធ្វើការ Edit លើក្តារខៀនចាស់ (ស្អាតល្អ មិនណែនឆាត)
