@@ -435,6 +435,7 @@ async def vsnpc(ctx, amount: str):
                 
                 # 🛠️ នេះជាបន្ទាត់ទី 435 ដែលបងត្រូវកែ (កែទៅជាបន្ទាត់ខាងក្រោមនេះ)៖
                 await board_msg.edit(content=f"🟢 Your turn (❌):\n```{draw_board(board)}```")
+# ==================== Game Commands (Player vs Player) ====================
 @bot.command(name="txo")
 async def txo(ctx, p2: discord.Member, bet_amount: int):
     p1 = ctx.author
@@ -577,7 +578,7 @@ async def vsnpc(ctx, amount: str):
         f"🎁 Winning Pool : {format_number(pot)} {emoji}\n"
         f"----------------------------------------"
     )
-    await ctx.send(embed=npc)
+    await ctx.send(embed=embed_npc)
     p1_bal["wallet"] -= bet_amount
     save_data()
 
