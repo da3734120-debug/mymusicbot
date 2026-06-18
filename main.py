@@ -130,10 +130,10 @@ class QuickButtonView(discord.ui.View):
 # 🔴 ចំណុចសំខាន់៖ ពាក្យ @bot.command ត្រូវតែនៅជាប់ជញ្ជាំងខាងឆ្វេងបង្អស់ (គ្មានដកឃ្លាឡើយ!)
 @bot.command(name="tp")
 async def transfer_money(ctx, receiver: discord.Member, amount: int):
-    sender = ctx.author
-       if sender == receiver or amount <= 0:
-          await ctx.send("❌ Action មិនត្រឹមត្រូវ! អ្នកមិនអាចផ្ទេរលុយឱ្យខ្លួនឯង បានទេ។")
-          return
+    sender = ctx.author  # 🔴 ពិនិត្យមើល៖ ដកឃ្លា ៤ ដង (ឬ ១ Tab) ពីជញ្ជាំងខាងឆ្វេង
+    if sender == receiver or amount <= 0:  # 🔴 ត្រូវដកឃ្លាខិតចូលឱ្យ "ស្មើគ្នា" ជាមួយបន្ទាត់ខាងលើ! (ហាមដកឃ្លាច្រើនជាង)
+        await ctx.send("❌ Action មិនត្រឹមត្រូវ! អ្នកមិនអាចផ្ទេរលុយឱ្យខ្លួនឯង បានទេ។")
+        return
     sender_bal = get_balance(sender.id)
     receiver_bal = get_balance(receiver.id)
     
