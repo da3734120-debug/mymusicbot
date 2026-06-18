@@ -7,9 +7,7 @@ import json
 from flask import Flask
 from threading import Thread
 
-# ==================== Web Server ====================
 app = Flask('')
-
 @app.route('/')
 def home(): 
     return "Bot XO Online 24/7!"
@@ -21,7 +19,13 @@ def run_web_server():
 def keep_alive(): 
     Thread(target=run_web_server).start()
 
-# ==================== Database Setup ====================
+intents = discord.Intents.default()
+intents.message_content = True
+
+# 🟢 កំណត់ឱ្យគ្មាន Prefix តាមបំណងរបស់បង (វាយពាក្យបញ្ជាចំៗបានភ្លាម)
+bot = commands.Bot(command_prefix="", intents=intents, case_insensitive=True)
+
+# 🔴 ផ្លូវទៅកាន់ Volume រក្សាទុកលុយមិនឱ្យបាត់បង់លើ Railway
 DATA_FILE = "/data/balances.json"
 
 def load_data():
@@ -38,19 +42,15 @@ def save_data():
     with open(DATA_FILE, "w") as f:
         json.dump(user_balances, f, indent=4)
 
-# ==================== Utilities ====================
-intents = discord.Intents.default()
-intents.message_content = True
-bot = commands.Bot(command_prefix="!", intents=intents, case_insensitive=True)
-
 user_balances = load_data()
 active_players = set()
 
 @tasks.loop(minutes=5.0)
 async def auto_save_backup():
     save_data()
-    print("💾 [Auto-Save] Balances backed up successfully!")
+    print("💾 [Auto-Save] Balances backed up to Volume successfully!")
 
+# រូប Emoji ពិតប្រាកដរបស់បង
 emoji = "<:emoji_5:1516480628370047250>" 
 game_icon = "🎮"
 
@@ -79,12 +79,12 @@ def check_winner(b):
         if b[i] == b[i+1] == b[i+2] != "⬜": return b[i]
     for i in range(3):
         if b[i] == b[i+3] == b[i+6] != "⬜": return b[i]
-    if b[0] == b[4] == b[8] != "⬜": return b[0]
-    if b[2] == b[4] == b[6] != "⬜": return b[2]
+    if b[0] == b[4] == b[8] != "⬜": return b[4]
+    if b[2] == b[4] == b[6] != "⬜": return b[4]
     if "⬜" not in b: return "Tie"
     return None
 
-# 🧠 ប្រព័ន្ធខួរក្បាល AI Smart NPC ឆ្លាតវៃ (Block & Win Logic)
+# 🧠 ប្រព័ន្ធខួរក្បាល AI NPC ឆ្លាតវៃ (ស្ទាក់បិទផ្លូវ និងវាយលុកយកជ័យជម្នះ)
 def get_npc_move(board):
     empty_spots = [i for i, c in enumerate(board) if c == "⬜"]
     
@@ -102,14 +102,15 @@ def get_npc_move(board):
         if check_winner(test_board) == "❌":
             return spot
 
-    # ៣. យុទ្ធសាស្ត្រល្អបំផុត៖ វាយយកប្រអប់កណ្តាល (លេខ ៥)
+    # ៣. យុទ្ធសាស្ត្រល្អ៖ វាយយកប្រអប់កណ្តាល (លេខ ៥)
     if 4 in empty_spots:
         return 4
 
-    # ៤. វាយលុកយកប្រអប់ជ្រុង (១, ៣, ៧, ៩)
-    corners = [i for i in [0, 2, 6, 8] if i in empty_spots]
-    if corners:
-        return random.choice(corners)
+    # ៤. វាយលុកយកប្រអប់ជ្រុង (លេខ ១, ៣, ៧, ៩)
+    corners = [0, 2, 6, 8]
+    available_corners = [i for i in corners if i in empty_spots]
+    if available_corners:
+        return random.choice(available_corners)
 
     # ៥. ចុចជ្រើសរើសកន្លែងធម្មតាដែលនៅសល់
     return random.choice(empty_spots)
@@ -122,69 +123,527 @@ async def on_ready():
 @bot.command(name="tbal")
 async def tbal(ctx):
     bal = get_balance(ctx.author.id)
-    embed = discord.Embed(title=f"💳 {ctx.author.display_name}'s Profile", color=discord.Color.blue())
+    wallet_fmt = format_number(bal['wallet'])
+    bank_fmt = format_number(bal['bank'])
+    lost_fmt = format_number(bal['lost'])
+    win_fmt = format_number(bal['win'])
+    
+    embed = discord.Embed(title=f"💳 {ctx.author.display_name}'s Balance", color=discord.Color.blue())
     embed.description = (
-        f"**Coins :** {format_number(bal['wallet'])} {emoji}\n**Bank :** {format_number(bal['bank'])} {emoji}\n\n"
-        f"📊 Gameplay Statistics**\n**Lost : {bal['lost']} times\n**Win :** {bal['win']} times"
+        f"**Coins :** {wallet_fmt} {emoji}\n"
+        f"**Bank :** {bank_fmt} {emoji}\n\n"
+        f"📊 **Gameplay Statistics**\n"
+        f"**Lost :** {lost_fmt} times\n"
+        f"**Win :** {win_fmt} times"
     )
-    if ctx.author.avatar: 
+    if ctx.author.avatar:
         embed.set_thumbnail(url=ctx.author.avatar.url)
+    embed.set_footer(text="Your personal coin profile")
     await ctx.send(embed=embed)
 
 @bot.command(name="Tbank")
 async def deposit(ctx, amount: str):
     bal = get_balance(ctx.author.id)
     amt = bal["wallet"] if amount.lower() == "all" else (int(amount) if amount.isdigit() else 0)
+    
     if amt <= 0 or bal["wallet"] < amt:
-        await ctx.send("❌ Invalid amount or insufficient coins!")
+        embed_error = discord.Embed(title="❌ Transaction Failed", description="Invalid amount or insufficient coins in your wallet!", color=discord.Color.red())
+        await ctx.send(embed=embed_error)
         return
+    
     bal["wallet"] -= amt
     bal["bank"] += amt
     save_data()
-    await ctx.send(f"🏦 Deposited +{format_number(amt)} {emoji} into Bank.")
+    
+    embed_success = discord.Embed(title="🏦 Deposit Successful", color=discord.Color.green())
+    embed_success.description = (
+        f"👤 Account: {ctx.author.mention}\n"
+        f"📥 Deposited: +{format_number(amt)} {emoji} into Bank\n"
+        f"----------------------------------------\n"
+        f"💰 Current Wallet: {format_number(bal['wallet'])} {emoji}"
+    )
+    if ctx.author.avatar:
+        embed_success.set_thumbnail(url=ctx.author.avatar.url)
+    embed_success.set_footer(text="XO Online Bank System")
+    await ctx.send(embed=embed_success)
 
 @bot.command(name="Tout")
 async def withdraw(ctx, amount: str):
     bal = get_balance(ctx.author.id)
     amt = bal["bank"] if amount.lower() == "all" else (int(amount) if amount.isdigit() else 0)
+    
     if amt <= 0 or bal["bank"] < amt:
-        await ctx.send("❌ Invalid amount or insufficient coins in bank!")
+        embed_error = discord.Embed(title="❌ Transaction Failed", description="Invalid amount or insufficient coins in your bank!", color=discord.Color.red())
+        await ctx.send(embed=embed_error)
         return
+    
     bal["bank"] -= amt
     bal["wallet"] += amt
     save_data()
-    await ctx.send(f"💸 Withdrew +{format_number(amt)} {emoji} to Wallet.")
+    
+    embed_success = discord.Embed(title="💸 Withdraw Successful", color=discord.Color.blue())
+    embed_success.description = (
+        f"👤 Account: {ctx.author.mention}\n"
+        f"📤 Withdrew: +{format_number(amt)} {emoji} to Wallet\n"
+        f"----------------------------------------\n"
+        f"💰 Current Bank: {format_number(bal['bank'])} {emoji}"
+    )
+    if ctx.author.avatar:
+        embed_success.set_thumbnail(url=ctx.author.avatar.url)
+    embed_success.set_footer(text="XO Online Bank System")
+    await ctx.send(embed=embed_success)
 
 @bot.command(name="tp")
 async def transfer_money(ctx, receiver: discord.Member, amount: int):
     sender = ctx.author
-    if sender.id == receiver.id or amount <= 0:
-        await ctx.send("❌ Invalid transfer action!")
+    if sender == receiver or amount <= 0:
+        await ctx.send("❌ Invalid action! You cannot transfer to yourself.")
         return
-    s_bal = get_balance(sender.id)
-    r_bal = get_balance(receiver.id)
-    if s_bal["wallet"] < amount:
-        await ctx.send("❌ Insufficient coins!")
+    sender_bal = get_balance(sender.id)
+    receiver_bal = get_balance(receiver.id)
+    if sender_bal["wallet"] < amount:
+        await ctx.send(f"❌ {sender.display_name}, you do not have enough coins!")
         return
 
-    embed_tp = discord.Embed(title="💸 Confirm Transfer", description=f"Transfer {format_number(amount)} {emoji} to {receiver.mention}?", color=discord.Color.gold())
-    view = QuickButtonView(allowed_user=sender)
-    msg = await ctx.send(embed=embed_tp, view=view)
+    embed_tp = discord.Embed(title="💸 Money Transfer Pending", color=discord.Color.gold())
+    embed_tp.description = (
+        f"👤 Sender: {sender.mention}\n"
+        f"🎯 Receiver: {receiver.mention}\n"
+        f"💵 Amount: {format_number(amount)} {emoji}\n\n"
+        f"👉 {sender.mention}, are you sure you want to transfer? Click a button below:\n(Timeout: 60s)"
+    )
+    if sender.avatar:
+        embed_tp.set_thumbnail(url=sender.avatar.url)
+
+    view = QuickButtonView(allowed_user=sender, timeout=60.0)
+    msg = await ctx.send(content=f"{sender.mention} Please confirm your transfer!", embed=embed_tp, view=view)
     await view.wait()
 
-    for child in view.children: 
-        child.disabled = True
-        
-    if view.value == "accept":
-        s_bal["wallet"] -= amount
-        r_bal["wallet"] += amount
-        save_data()
-        embed_tp.title = "✅ Transfer Completed"
-        embed_tp.color = discord.Color.green()
-    else:
-        embed_tp.title = "❌ Transfer Cancelled"
+    if view.value is None or view.value == "decline":
+        for child in view.children: child.disabled = True
+        embed_tp.title = "❌ Transfer Cancelled / Expired"
         embed_tp.color = discord.Color.red()
-    await msg.edit(embed=embed_tp, view=view)
+        embed_tp.description = "❌ The transaction was declined or timed out."
+        await msg.edit(content=None, embed=embed_tp, view=view)
+        return
+
+    for child in view.children: child.disabled = True
+    sender_bal["wallet"] -= amount
+    receiver_bal["wallet"] += amount
+    save_data()
+
+    embed_success = discord.Embed(title="✅ Transfer Completed", color=discord.Color.green())
+    embed_success.description = (
+        f"🎉 Transaction finished successfully!\n"
+        f"----------------------------------------\n"
+        f"📉 Sender: {sender.mention} (-{format_number(amount)} {emoji})\n"
+        f"📈 Receiver: {receiver.mention} (+{format_number(amount)} {emoji})\n"
+        f"----------------------------------------\n"
+        f"💰 Sender's Remaining Wallet: {format_number(sender_bal['wallet'])} {emoji}"
+    )
+    await msg.edit(content=None, embed=embed_success, view=view)
+    # ==================== Game Commands (Player vs Player) ====================
+@bot.command(name="txo")
+async def txo(ctx, p2: discord.Member, bet_amount: int):
+    p1 = ctx.author
+    if p1 == p2 or bet_amount <= 0:
+        await ctx.send("❌ Cannot start the game! Invalid player or bet amount.")
+        return
+    if p1.id in active_players or p2.id in active_players:
+        await ctx.send("❌ One of the players is already in an active game!")
+        return
+
+    p1_bal, p2_bal = get_balance(p1.id), get_balance(p2.id)
+    if p1_bal["wallet"] < bet_amount or p2_bal["wallet"] < bet_amount:
+        await ctx.send("❌ Insufficient coins to start the match!")
+        return
+
+    embed_invite = discord.Embed(title=f"{game_icon} Tic-Tac-Toe Challenge", color=discord.Color.blue())
+    embed_invite.description = (
+        f"🎮 {p2.mention}! {p1.mention} has challenged you to a game of XO!\n"
+        f"----------------------------------------\n"
+        f"❌ Challenger (X) : {p1.display_name}\n"
+        f"⭕ Opponent (O)   : {p2.display_name}\n"
+        f"💵 Bet Amount      : {format_number(bet_amount)} {emoji}\n"
+        f"----------------------------------------\n"
+        f"👉 Click a button below to respond:"
+    )
+
+    view = QuickButtonView(allowed_user=p2, timeout=60.0)
+    msg = await ctx.send(embed=embed_invite, view=view)
+    await view.wait()
+    if view.value is None or view.value == "decline":
+        for child in view.children: child.disabled = True
+        status_text = "⏰ Invitation expired!" if view.value is None else f"❌ {p2.display_name} declined!"
+        await msg.edit(content=status_text, view=view)
+        return
+
+    for child in view.children: child.disabled = True
+    await msg.edit(content=f"✅ {p2.display_name} accepted the match!", view=view)
+
+    active_players.add(p1.id)
+    active_players.add(p2.id)
+
+    p1_bal["wallet"] -= bet_amount
+    p2_bal["wallet"] -= bet_amount
+    save_data()
+    pot = bet_amount * 2
+    match_num, turn, st_player = 1, p1, p1
+
+    try:
+        while True:
+            embed_vs = discord.Embed(title="⚔️ Match 1vs1 Active ⚔️", color=discord.Color.orange())
+            embed_vs.description = (
+                f"**❌ {p1.display_name}**   Vs   **⭕ {p2.display_name}**\n"
+                f"----------------------------------------\n"
+                f"🏆 Match : #{match_num}\n"
+                f"🎁 Winning Pool   : {format_number(pot)} {emoji}\n"
+                f"----------------------------------------"
+            )
+            await ctx.send(embed=embed_vs)
+
+            board, tie, win_sym = ["⬜"] * 9, False, None
+            board_msg = await ctx.send(f"{turn.mention}'s turn ({'❌' if turn == p1 else '⭕'}):\n```{draw_board(board)}```\n⏰ *5 minutes timeout!*")
+            
+            while True:
+                try:
+                    msg_turn = await bot.wait_for('message', check=lambda m: m.author.id == turn.id and m.channel.id == ctx.channel.id and m.content.isdigit() and 1 <= int(m.content) <= 9, timeout=300.0)
+                    move = int(msg_turn.content) - 1
+                    try: await msg_turn.delete()
+                    except: pass
+                except asyncio.TimeoutError:
+                    await ctx.send(f"⏰ {turn.display_name} went AFK! Auto-defeat triggered!")
+                    win_sym = '⭕' if turn == p1 else '❌'
+                    break
+                    
+                if board[move] != "⬜": 
+                    warning = await ctx.send("❌ This spot is already taken! Try again.")
+                    await asyncio.sleep(2)
+                    try: await warning.delete()
+                    except: pass
+                    continue
+
+                board[move] = '❌' if turn == p1 else '⭕'
+                res = check_winner(board)
+                if res:
+                    if res == "Tie": tie = True
+                    else: win_sym = res
+                    break
+                turn = p2 if turn == p1 else p1
+                await board_msg.edit(content=f"{turn.mention}'s turn ({'❌' if turn == p1 else '⭕'}):\n```{draw_board(board)}```\n⏰ *5 minutes timeout!*")
+                
+            if tie:
+                await ctx.send(f"🏁 It's a Tie!\n```{draw_board(board)}```\n🤝 Rematching...")
+                match_num += 1
+                st_player = p2 if st_player == p1 else p1
+                turn = st_player
+                await asyncio.sleep(2)
+                continue
+            break
+
+        winner = p1 if win_sym == '❌' else p2
+        loser = p2 if winner == p1 else p1
+        user_balances[str(winner.id)]["wallet"] += pot
+        user_balances[str(winner.id)]["win"] += 1
+        user_balances[str(loser.id)]["lost"] += 1
+        save_data()
+        
+        embed_end = discord.Embed(title="🏁 Match Concluded 🏁", color=discord.Color.green())
+        embed_end.description = (
+            f"👑 Winner : {winner.mention}\n"
+            f"💀 Loser  : {loser.mention}\n"
+            f"🎁 Total Reward : {format_number(pot)} {emoji}"
+        )
+        await ctx.send(content=f"```{draw_board(board)}```", embed=embed_end)
+        
+    finally:
+        active_players.discard(p1.id)
+        active_players.discard(p2.id)
+
+# ==================== VS NPC Command ====================
+@bot.command(name="vsnpc")
+async def vsnpc(ctx, amount: str):
+    p1 = ctx.author
+    if p1.id in active_players:
+        await ctx.send(f"❌ {p1.display_name}, you are already in a game!")
+        return
+
+    p1_bal = get_balance(p1.id)
+    bet_amount = p1_bal["wallet"] if amount.lower() == "all" else (int(amount) if amount.isdigit() else 0)
+
+    if bet_amount <= 0 or p1_bal["wallet"] < bet_amount:
+        await ctx.send("❌ Invalid bet amount or insufficient coins!")
+        return
+
+    active_players.add(p1.id)
+    pot = bet_amount * 2
+    match_num = 1
+
+    embed_npc = discord.Embed(title="⚔️ Match Active (vs NPC) ⚔️", color=discord.Color.purple())
+    embed_npc.description = (
+        f"**❌ {p1.display_name}**   Vs   **🤖 NPC**\n"
+        f"----------------------------------------\n"
+        f"🎁 Winning Pool : {format_number(pot)} {emoji}\n"
+        f"----------------------------------------"
+    )
+    await ctx.send(embed=embed_npc)
+    p1_bal["wallet"] -= bet_amount
+    save_data()
+
+    try:
+        while True:
+            await ctx.send(f"⚔️ Match vs NPC #{match_num}!")
+            board, tie, win_sym = ["⬜"] * 9, False, None
+            board_msg = await ctx.send(f"🟢 Your turn (❌):\n```{draw_board(board)}```")
+            
+            while True:
+                try:
+                    msg = await bot.wait_for('message', check=lambda m: m.author.id == p1.id and m.channel.id == ctx.channel.id and m.content.isdigit() and 1 <= int(m.content) <= 9, timeout=300.0)
+                    move = int(msg.content) - 1
+                    try: await msg.delete()
+                    except: pass
+                except asyncio.TimeoutError:
+                    await ctx.send("⏰ You went AFK! NPC wins.")
+                    win_sym = "⭕"
+                    break
+                
+                if board[move] != "⬜": 
+                    warning = await ctx.send("❌ This spot is already taken! Try again.")
+                    await asyncio.sleep(2)
+                    try: await warning.delete()
+                    except: pass
+                    continue
+                    
+                board[move] = "❌"
+                res = check_winner(board)
+                if res:
+                    if res == "Tie": tie = True
+                    else: win_sym = res
+                    break
+
+                # 🤖 វេនរបស់ AI Smart NPC ឆ្លាតវៃ
+                await board_msg.edit(content="🤖 NPC is thinking...\n```" + draw_board(board) + "```")
+                await asyncio.sleep(1.0)
+                
+                npc_move = get_npc_move(board)
+                board[npc_move] = "⭕"
+                res = check_winner(board)
+                if res:
+                    if res == "Tie": tie = True
+                    else: win_sym = res
+                    break
+                await board_msg.
+                # ==================== Game Commands (Player vs Player) ====================
+@bot.command(name="txo")
+async def txo(ctx, p2: discord.Member, bet_amount: int):
+    p1 = ctx.author
+    if p1 == p2 or bet_amount <= 0:
+        await ctx.send("❌ Cannot start the game! Invalid player or bet amount.")
+        return
+    if p1.id in active_players or p2.id in active_players:
+        await ctx.send("❌ One of the players is already in an active game!")
+        return
+
+    p1_bal, p2_bal = get_balance(p1.id), get_balance(p2.id)
+    if p1_bal["wallet"] < bet_amount or p2_bal["wallet"] < bet_amount:
+        await ctx.send("❌ Insufficient coins to start the match!")
+        return
+
+    embed_invite = discord.Embed(title=f"{game_icon} Tic-Tac-Toe Challenge", color=discord.Color.blue())
+    embed_invite.description = (
+        f"🎮 {p2.mention}! {p1.mention} has challenged you to a game of XO!\n"
+        f"----------------------------------------\n"
+        f"❌ Challenger (X) : {p1.display_name}\n"
+        f"⭕ Opponent (O)   : {p2.display_name}\n"
+        f"💵 Bet Amount      : {format_number(bet_amount)} {emoji}\n"
+        f"----------------------------------------\n"
+        f"👉 Click a button below to respond:"
+    )
+
+    view = QuickButtonView(allowed_user=p2, timeout=60.0)
+    msg = await ctx.send(embed=embed_invite, view=view)
+    await view.wait()
+    if view.value is None or view.value == "decline":
+        for child in view.children: child.disabled = True
+        status_text = "⏰ Invitation expired!" if view.value is None else f"❌ {p2.display_name} declined!"
+        await msg.edit(content=status_text, view=view)
+        return
+
+    for child in view.children: child.disabled = True
+    await msg.edit(content=f"✅ {p2.display_name} accepted the match!", view=view)
+
+    active_players.add(p1.id)
+    active_players.add(p2.id)
+
+    p1_bal["wallet"] -= bet_amount
+    p2_bal["wallet"] -= bet_amount
+    save_data()
+    pot = bet_amount * 2
+    match_num, turn, st_player = 1, p1, p1
+
+    try:
+        while True:
+            embed_vs = discord.Embed(title="⚔️ Match 1vs1 Active ⚔️", color=discord.Color.orange())
+            embed_vs.description = (
+                f"**❌ {p1.display_name}**   Vs   **⭕ {p2.display_name}**\n"
+                f"----------------------------------------\n"
+                f"🏆 Match : #{match_num}\n"
+                f"🎁 Winning Pool   : {format_number(pot)} {emoji}\n"
+                f"----------------------------------------"
+            )
+            await ctx.send(embed=embed_vs)
+
+            board, tie, win_sym = ["⬜"] * 9, False, None
+            board_msg = await ctx.send(f"{turn.mention}'s turn ({'❌' if turn == p1 else '⭕'}):\n```{draw_board(board)}```\n⏰ *5 minutes timeout!*")
+            
+            while True:
+                try:
+                    msg_turn = await bot.wait_for('message', check=lambda m: m.author.id == turn.id and m.channel.id == ctx.channel.id and m.content.isdigit() and 1 <= int(m.content) <= 9, timeout=300.0)
+                    move = int(msg_turn.content) - 1
+                    try: await msg_turn.delete()
+                    except: pass
+                except asyncio.TimeoutError:
+                    await ctx.send(f"⏰ {turn.display_name} went AFK! Auto-defeat triggered!")
+                    win_sym = '⭕' if turn == p1 else '❌'
+                    break
+                    
+                if board[move] != "⬜": 
+                    warning = await ctx.send("❌ This spot is already taken! Try again.")
+                    await asyncio.sleep(2)
+                    try: await warning.delete()
+                    except: pass
+                    continue
+
+                board[move] = '❌' if turn == p1 else '⭕'
+                res = check_winner(board)
+                if res:
+                    if res == "Tie": tie = True
+                    else: win_sym = res
+                    break
+                turn = p2 if turn == p1 else p1
+                await board_msg.edit(content=f"{turn.mention}'s turn ({'❌' if turn == p1 else '⭕'}):\n```{draw_board(board)}```\n⏰ *5 minutes timeout!*")
+                
+            if tie:
+                await ctx.send(f"🏁 It's a Tie!\n```{draw_board(board)}```\n🤝 Rematching...")
+                match_num += 1
+                st_player = p2 if st_player == p1 else p1
+                turn = st_player
+                await asyncio.sleep(2)
+                continue
+            break
+
+        winner = p1 if win_sym == '❌' else p2
+        loser = p2 if winner == p1 else p1
+        user_balances[str(winner.id)]["wallet"] += pot
+        user_balances[str(winner.id)]["win"] += 1
+        user_balances[str(loser.id)]["lost"] += 1
+        save_data()
+        
+        embed_end = discord.Embed(title="🏁 Match Concluded 🏁", color=discord.Color.green())
+        embed_end.description = (
+            f"👑 Winner : {winner.mention}\n"
+            f"💀 Loser  : {loser.mention}\n"
+            f"🎁 Total Reward : {format_number(pot)} {emoji}"
+        )
+        await ctx.send(content=f"```{draw_board(board)}```", embed=embed_end)
+        
+    finally:
+        active_players.discard(p1.id)
+        active_players.discard(p2.id)
+        # ==================== VS NPC Command ====================
+@bot.command(name="vsnpc")
+async def vsnpc(ctx, amount: str):
+    p1 = ctx.author
+    if p1.id in active_players:
+        await ctx.send(f"❌ {p1.display_name}, you are already in a game!")
+        return
+
+    p1_bal = get_balance(p1.id)
+    bet_amount = p1_bal["wallet"] if amount.lower() == "all" else (int(amount) if amount.isdigit() else 0)
+
+    if bet_amount <= 0 or p1_bal["wallet"] < bet_amount:
+        await ctx.send("❌ Invalid bet amount or insufficient coins!")
+        return
+
+    active_players.add(p1.id)
+    pot = bet_amount * 2
+    match_num = 1
+
+    embed_npc = discord.Embed(title="⚔️ Match Active (vs NPC) ⚔️", color=discord.Color.purple())
+    embed_npc.description = (
+        f"**❌ {p1.display_name}**   Vs   **🤖 NPC**\n"
+        f"----------------------------------------\n"
+        f"🎁 Winning Pool : {format_number(pot)} {emoji}\n"
+        f"----------------------------------------"
+    )
+    await ctx.send(embed=npc)
+    p1_bal["wallet"] -= bet_amount
+    save_data()
+
+    try:
+        while True:
+            await ctx.send(f"⚔️ Match vs NPC #{match_num}!")
+            board, tie, win_sym = ["⬜"] * 9, False, None
+            board_msg = await ctx.send(f"🟢 Your turn (❌):\n```{draw_board(board)}```")
+            
+            while True:
+                try:
+                    msg = await bot.wait_for('message', check=lambda m: m.author.id == p1.id and m.channel.id == ctx.channel.id and m.content.isdigit() and 1 <= int(m.content) <= 9, timeout=300.0)
+                    move = int(msg.content) - 1
+                    try: await msg.delete()
+                    except: pass
+                except asyncio.TimeoutError:
+                    await ctx.send("⏰ You went AFK! NPC wins.")
+                    win_sym = "⭕"
+                    break
+                
+                if board[move] != "⬜": 
+                    warning = await ctx.send("❌ This spot is already taken! Try again.")
+                    await asyncio.sleep(2)
+                    try: await warning.delete()
+                    except: pass
+                    continue
+                    
+                board[move] = "❌"
+                res = check_winner(board)
+                if res:
+                    if res == "Tie": tie = True
+                    else: win_sym = res
+                    break
+
+                # 🤖 វេនរបស់ AI Smart NPC ឆ្លាតវៃ
+                await board_msg.edit(content="🤖 NPC is thinking...\n```" + draw_board(board) + "```")
+                await asyncio.sleep(1.0)
+                
+                npc_move = get_npc_move(board)
+                board[npc_move] = "⭕"
+                res = check_winner(board)
+                if res:
+                    if res == "Tie": tie = True
+                    else: win_sym = res
+                    break
+                await board_msg.edit(content=f"🟢 Your turn (❌):\n```{draw_board(board)}```")
+                    
+            if tie:
+                await ctx.send(f"🏁 Tied with NPC!\n```{draw_board(board)}```\n🤝 Rematching...")
+                match_num += 1
+                await asyncio.sleep(2)
+                continue
+            break
+
+        await ctx.send(f"🏁 Final Results:\n```{draw_board(board)}```")
+        uid = str(p1.id)
+        if win_sym == "❌":
+            user_balances[uid]["wallet"] += pot
+            user_balances[uid]["win"] += 1
+            await ctx.send(f"🎉 {p1.mention} defeated NPC and won {format_number(pot)} {emoji}!")
+        else:
+            user_balances[uid]["lost"] += 1
+            await ctx.send(f"💸 {p1.mention} lost to NPC and dropped {format_number(bet_amount)} {emoji}!")
+        
+        save_data()
+    finally:
+        active_players.discard(p1.id)
 
 # ==================== UI View Components ====================
 class QuickButtonView(discord.ui.View):
@@ -208,170 +667,12 @@ class QuickButtonView(discord.ui.View):
     @discord.ui.button(label="Decline ❌", style=discord.ButtonStyle.red)
     async def decline_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self.handle_click(interaction, "decline")
-        # ==================== Game Commands (Player vs Player) ====================
-@bot.command(name="txo")
-async def txo(ctx, p2: discord.Member, bet_amount: int):
-    p1 = ctx.author
-    if p1.id == p2.id or bet_amount <= 0 or p1.id in active_players or p2.id in active_players:
-        await ctx.send("❌ Game cannot start! Invalid match config or player busy.")
-        return
-    p1_bal, p2_bal = get_balance(p1.id), get_balance(p2.id)
-    if p1_bal["wallet"] < bet_amount or p2_bal["wallet"] < bet_amount:
-        await ctx.send("❌ Insufficient coins!")
-        return
 
-    view = QuickButtonView(allowed_user=p2)
-    msg = await ctx.send(f"🎮 {p2.mention}, {p1.mention} challenges you to XO for {format_number(bet_amount)} {emoji}!", view=view)
-    await view.wait()
-
-    for child in view.children: 
-        child.disabled = True
-        
-    if view.value != "accept":
-        await msg.edit(content="❌ Challenge declined or expired!", view=view)
-        return
-
-    active_players.add(p1.id)
-    active_players.add(p2.id)
-    p1_bal["wallet"] -= bet_amount
-    p2_bal["wallet"] -= bet_amount
-    save_data()
-    
-    pot = bet_amount * 2
-    match_num, turn, st_player = 1, p1, p1
-
-    try:
-        while True:
-            await ctx.send(f"⚔️ **Match 1vs1 Active - Round #{match_num} (Pool: {format_number(pot)} {emoji})**")
-            board, tie, win_sym = ["⬜"] * 9, False, None
-            board_msg = await ctx.send(f"{turn.mention}'s turn:\n```\n{draw_board(board)}\n```")
-
-            while True:
-                try:
-                    m = await bot.wait_for('message', check=lambda m: m.author.id == turn.id and m.channel.id == ctx.channel.id and m.content.isdigit() and 1 <= int(m.content) <= 9, timeout=300.0)
-                    move = int(m.content) - 1
-                    try: await m.delete()
-                    except: pass
-                except asyncio.TimeoutError:
-                    win_sym = '⭕' if turn == p1 else '❌'
-                    break
-
-                if board[move] != "⬜": 
-                    continue
-                board[move] = '❌' if turn == p1 else '⭕'
-                
-                res = check_winner(board)
-                if res:
-                    if res == "Tie": 
-                        tie = True
-                    else: 
-                        win_sym = res
-                    break
-                turn = p2 if turn == p1 else p1
-                await board_msg.edit(content=f"{turn.mention}'s turn:\n```\n{draw_board(board)}\n```")
-                
-            if tie:
-                await ctx.send(f"🤝 Tie! Rematching...\n```\n{draw_board(board)}\n```")
-                match_num += 1
-                st_player = p2 if st_player == p1 else p1
-                turn = st_player
-                continue
-            break
-
-        winner = p1 if win_sym == '❌' else p2
-        loser = p2 if winner == p1 else p1
-        user_balances[str(winner.id)]["wallet"] += pot
-        user_balances[str(winner.id)]["win"] += 1
-        user_balances[str(loser.id)]["lost"] += 1
-        save_data()
-        await ctx.send(f"👑 **{winner.mention} WON THE MATCH AND CLAIMED {format_number(pot)} {emoji}!**\n```\n{draw_board(board)}\n```")
-    finally:
-        active_players.discard(p1.id)
-        active_players.discard(p2.id)
-
-# ==================== Game Commands (Player vs Smart NPC) ====================
-@bot.command(name="vsnpc")
-async def vsnpc(ctx, amount: str):
-    p1 = ctx.author
-    if p1.id in active_players: 
-        return
-    p1_bal = get_balance(p1.id)
-    bet_amount = p1_bal["wallet"] if amount.lower() == "all" else (int(amount) if amount.isdigit() else 0)
-    if bet_amount <= 0 or p1_bal["wallet"] < bet_amount:
-        await ctx.send("❌ Insufficient coins!")
-        return
-
-    active_players.add(p1.id)
-    p1_bal["wallet"] -= bet_amount
-    save_data()
-    pot = bet_amount * 2
-    match_num = 1
-
-    try:
-        while True:
-            board, tie, win_sym = ["⬜"] * 9, False, None
-            board_msg = await ctx.send(f"🤖 **Match vs Smart NPC #{match_num}**\nYour turn (❌):\n```\n{draw_board(board)}\n```")
-            while True:
-                try:
-                    m = await bot.wait_for('message', check=lambda m: m.author.id == p1.id and m.channel.id == ctx.channel.id and m.content.isdigit() and 1 <= int(m.content) <= 9, timeout=300.0)
-                    move = int(m.content) - 1
-                    try: await m.delete()
-                    except: pass
-                except asyncio.TimeoutError:
-                    win_sym = "⭕"
-                    break
-                
-                if board[move] != "⬜": 
-                    continue
-                board[move] = "❌"
-                
-                res = check_winner(board)
-                if res:
-                    if res == "Tie": 
-                        tie = True
-                    else: 
-                        win_sym = res
-                    break
-
-                # 🤖 វេនរបស់ AI Smart NPC
-                await board_msg.edit(content="🤖 NPC is calculating smart move...\n```\n" + draw_board(board) + "\n```")
-                await asyncio.sleep(1.0)
-                
-                npc_move = get_npc_move(board)
-                board[npc_move] = "⭕"
-                
-                res = check_winner(board)
-                if res:
-                    if res == "Tie": 
-                        tie = True
-                    else: 
-                        win_sym = res
-                    break
-                await board_msg.edit(content=f"🟢 Your turn (❌):\n```\n{draw_board(board)}\n```")
-                
-            if tie:
-                await ctx.send("🤝 Tied with Smart NPC! Rematching...")
-                match_num += 1
-                continue
-            break
-
-        uid = str(p1.id)
-        if win_sym == "❌":
-            user_balances[uid]["wallet"] += pot
-            user_balances[uid]["win"] += 1
-            await ctx.send(f"🏆 {p1.mention} beat the Smart NPC and won {format_number(pot)} {emoji}!\n```\n{draw_board(board)}\n```")
-        else:
-            user_balances[uid]["lost"] += 1
-            await ctx.send(f"💀 {p1.mention} lost to the Smart NPC! (-{format_number(bet_amount)} {emoji})\n```\n{draw_board(board)}\n```")
-        save_data()
-    finally:
-        active_players.discard(p1.id)
-
-# ==================== Bot Start Execution ====================
 if __name__ == "__main__":
     keep_alive()
     token = os.getenv('DISCORD_TOKEN')
     if token: 
         bot.run(token)
-    else: 
-        print("❌ Missing DISCORD_TOKEN in Environment Variables!")
+    else:
+        print("❌ DISCORD_TOKEN not found in Environment Variables!")
+        
