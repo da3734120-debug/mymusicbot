@@ -26,7 +26,7 @@ bot = commands.Bot(command_prefix="", intents=intents, case_insensitive=True)
 user_balances = {}
 active_players = set()
 
-# ✅ រូប Emoji លុយពិតប្រាកដរបស់បង ត្រូវបានដាក់ចូលរួចរាល់
+# រូប Emoji លុយពិតប្រាកដរបស់បង
 emoji = "<:emoji_5:1516480628370047250>" 
 game_icon = "🎮"
 
@@ -52,8 +52,8 @@ def check_winner(b):
         if b[i] == b[i+1] == b[i+2] != "⬜": return b[i]
     for i in range(3):
         if b[i] == b[i+3] == b[i+6] != "⬜": return b[i]
-    if b[0] == b[4] == b[8] != "⬜": return b[0]
-    if b[2] == b[4] == b[6] != "⬜": return b[2]
+    if b == b == b != "⬜": return b
+    if b == b == b != "⬜": return b
     if "⬜" not in b: return "Tie"
     return None
 
@@ -117,7 +117,8 @@ class TransferSenderView(discord.ui.View):
             return
         self.value = "accept"
         self.stop()
-        @discord.ui.button(label="Decline (បដិសេធ) ❌", style=discord.ButtonStyle.red)
+
+    @discord.ui.button(label="Decline (បដិសេធ) ❌", style=discord.ButtonStyle.red)
     async def decline(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user != self.sender:
             await interaction.response.send_message("❌ ប៊ូតុងនេះសម្រាប់តែម្ចាស់លុយ (អ្នកផ្ញើ) ចុចបដិសេធប៉ុណ្ណោះ!", ephemeral=True)
@@ -142,7 +143,7 @@ async def transfer_money(ctx, receiver: discord.Member, amount: int):
     embed_tp.description = (
         f"👤 អ្នកផ្ញើ (Sender): {sender.mention}\n"
         f"🎯 អ្នកទទួល (Receiver): {receiver.mention}\n"
-        f"💵 Jobs/ចំនួនទឹកប្រាក់: {format_number(amount)} {emoji}\n\n"
+        f"💵 ចំនួនទឹកប្រាក់: {format_number(amount)} {emoji}\n\n"
         f"👉 {sender.mention} តើអ្នកប្រាកដជាចង់ផ្ទេរលុយនេះទៅឱ្យគេមែនទេ? សូមចុចប៊ូតុងខាងក្រោម៖\n(Timeout: 60s)"
     )
     if sender.avatar:
