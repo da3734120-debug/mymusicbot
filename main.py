@@ -162,7 +162,7 @@ async def deposit(ctx, amount: str):
     embed_success.description = (
         f"👤 Account: {ctx.author.mention}\n"
         f"📥 Deposited: +{format_number(amt)} {emoji} into Bank\n"
-        f"----------------------------------------\n"
+        f"--------------------------------\n"
         f"💰 Current Wallet: {format_number(bal['wallet'])} {emoji}"
     )
     if ctx.author.avatar:
