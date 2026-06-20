@@ -22,7 +22,7 @@ def keep_alive():
     Thread(target=run_web_server).start()
 
 # ==================== Database Setup (Volume) ====================
-DATA_FILE = "balances.json"
+DATA_FILE = "database/balances.json"
 
 def load_data():
     if os.path.exists(DATA_FILE):
