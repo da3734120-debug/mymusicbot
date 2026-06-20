@@ -117,23 +117,18 @@ def get_npc_move(board):
 
     # ៥. ចុចជ្រើសរើសកន្លែងធម្មតាដែលនៅសល់
     return random.choice(empty_spots)
-
 @bot.event
 async def on_ready(): 
     print(f'📢 Bot XO Online: {bot.user.name}')
     
-    # កំណត់ Custom Status "T/help" របស់បង
-    custom_status = discord.CustomActivity(name="T/help")
-    await bot.change_presence(status=discord.Status.online, activity=custom_status)
-    
-    # 🔌 ហៅប្រព័ន្ធ T/help ពីមុនមកដំណើរការ
+    # 🔌 ហៅប្រព័ន្ធ T/help
     try:
         await bot.load_extension("help_command")
         print("✅ Loaded help_command.py successfully!")
     except Exception as e:
         print(f"❌ Failed to load help_command: {e}")
 
-    # 🛒 បន្ថែមផ្នែកនេះ៖ បើកដំណើរការប្រព័ន្ធហាងទំនិញ Gacha ថ្មី
+    # 🔌 ហៅប្រព័ន្ធ T/shop ថ្មី (ត្រូវប្រាកដថាឈ្មោះដូចគ្នាបេះបិទ)
     try:
         await bot.load_extension("shop_command")
         print("✅ Loaded shop_command.py successfully!")
