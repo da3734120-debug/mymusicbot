@@ -121,8 +121,19 @@ def get_npc_move(board):
 @bot.event
 async def on_ready(): 
     print(f'📢 Bot XO Online: {bot.user.name}')
+    
+    # 🌟 កំណត់ Custom Status ឱ្យលោតពាក្យ "T/help" នៅចំពីក្រោមឈ្មោះ Bot ផ្ទាល់
+    custom_status = discord.CustomActivity(name="T/help")
+    await bot.change_presence(status=discord.Status.online, activity=custom_status)
+    
+    # 🔌 ហៅប្រព័ន្ធ Help ចេញពី File ថ្មីមកដំណើរការ
+    try:
+        await bot.load_extension("help_command")
+        print("✅ Loaded help_command.py successfully!")
+    except Exception as e:
+        print(f"❌ Failed to load help_command: {e}")
+        
     auto_save_backup.start()
-    # ==================== Economy Commands ====================
 @bot.command(name="tbal")
 async def tbal(ctx):
     bal = get_balance(ctx.author.id)
