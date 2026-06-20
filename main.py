@@ -61,14 +61,27 @@ def format_number(num):
     return "{:,}".format(num)
 
 def get_balance(user_id):
+    global user_balances
     uid = str(user_id)
+    
+    # 🔒 ថែមផ្នែកនេះ៖ បង្ខំឱ្យ main.py បើកអានឯកសារ JSON ចុងក្រោយបង្អស់ពី Volume ឡើងវិញជានិច្ច ដើម្បីទាញយកទិន្នន័យដែល Shop បានកាត់លុយរួច
+    if os.path.exists(DATA_FILE):
+        try:
+            with open(DATA_FILE, "r") as f:
+                user_balances = json.load(f)
+        except Exception as e:
+            print(f"⚠️ [get_balance] Failed to reload JSON File: {e}")
+
+    # ប្រសិនបើមិនទាន់មានគណនីរបស់អ្នកលេងនេះទេ គឺបង្កើតគណនីថ្មីជូនភ្លាម
     if uid not in user_balances:
-        user_balances[uid] = {"wallet": 100, "bank": 0, "win": 0, "lost": 0}
+        user_balances[uid] = {"wallet": 100, "bank": 0, "win": 0, "lost": 0, "inventory": []}
         save_data()
+        
     if "win" not in user_balances[uid]:
         user_balances[uid]["win"] = 0
         user_balances[uid]["lost"] = 0
         save_data()
+        
     return user_balances[uid]
 
 def draw_board(board):
