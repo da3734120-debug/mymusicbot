@@ -4,9 +4,9 @@ import random
 from threading import Lock
 import json
 import os
-import main  # 🔌 ហៅចូល main ដើម្បីទាញយកទម្រង់រៀបចំ និងអថេរ
+import main  # 🔌 តភ្ជាប់ទៅ main.py ចំៗដើម្បីការពារ Error
 
-# 📦 ការកំណត់ទិន្នន័យទំនិញ តម្លៃ និងពណ៌កាត (ស្ទីលហ្គេម Grow a Garden)
+# 📦 ទិន្នន័យទំនិញ តម្លៃ និងរូបសញ្ញា (ស្ទីលហ្គេម Grow a Garden)
 ITEMS_POOL = {
     "Common": {"name": "Wooden Shield 🪵", "chance": 99, "price": 2000000, "color": discord.Color.light_gray(), "emoji": "⚪"},
     "Rare": {"name": "Iron Sword ⚔️", "chance": 60, "price": 3000000, "color": discord.Color.blue(), "emoji": "🔵"},
@@ -31,7 +31,7 @@ class ShopCommand(commands.Cog):
         weights = [ITEMS_POOL[t]["chance"] for t in tiers]
         with self.shop_lock:
             chosen = random.choices(tiers, weights=weights, k=1)
-            self.current_item_tier = chosen[0]
+            self.current_item_tier = chosen[0] # កែសម្រួលចំណុចអាន String ចំៗ
         print(f"🔄 [Shop Stock Updated] Active Stock: {self.current_item_tier}")
 
     @commands.command(name="t/shop")
@@ -41,32 +41,31 @@ class ShopCommand(commands.Cog):
             
         active_data = ITEMS_POOL[active_tier]
         
-        # 👑 បង្កើតកាត Embed ធំប្រណីតពណ៌ទៅតាមទំនិញដែលមានស្តុក
+        # 👑 បង្កើតកាត Embed ស្អាតប្រណីតកម្រិត Premium ដូច Grow a Garden UI
         embed = discord.Embed(
-            title="🏪 GROW GARDEN MARKET 🏪", 
-            description="Welcome to the shop catalog! Items rotate automatically every 4 minutes. Grab them while they are in stock!",
+            title="🏪 GROW GARDEN SEED & GEAR MARKET 🏪", 
+            description="Welcome to the shop market! Stock refreshes every 4 minutes.",
             color=active_data["color"]
         )
-        
-        if active_tier == "Mythic":
-            embed.set_author(name="🚨 ULTRA RARE DROPS DETECTED 🚨")
-        else:
-            embed.set_author(name=f"✨ Active Stock Sale: {active_tier} ✨")
+        embed.set_author(name="✨ AUTOMATED GACHA MARKET UP-TIME ✨")
 
-        # 📋 ជួសជុល៖ រៀបចំបង្កើតជាកូនប្រអប់ស្អាតៗ បំបែកពីគ្នា (លុបប្រអប់ ANSI ចោល)
+        # 📋 បង្កើតជាកូនប្រអប់ស្អាតៗ បំបែកពីគ្នា (លុបប្រអប់ ANSI ខ្មៅវែងចាស់ចោល)
         for tier_name, data in ITEMS_POOL.items():
             is_active = (tier_name == active_tier)
-            stock_icon = "🟢 **IN STOCK**" if is_active else "🔴 **OUT**"
+            stock_status = "🟢 **IN STOCK**" if is_active else "🔴 **OUT**"
             price_fmt = main.format_number(data['price'])
             
-            # បង្កើត Field ជាប្រអប់កូនៗរៀបតាមជួរ Grid យ៉ាងស្អាត
             embed.add_field(
                 name=f"{data['emoji']} {tier_name} Tier",
-                value=f"**Item:** {data['name']}\n**Price:** {price_fmt} {main.emoji}\n**Status:** {stock_status}",
-                inline=True # 👈 កំណត់ឱ្យរៀបជាជួរផ្ដេកទន្ទឹមគ្នាលើ PC និងប្រអប់ស្អាតលើទូរស័ព្ទ
+                value=f"• Item: {data['name']}\n• Price: {price_fmt} {main.emoji}\n• Status: {stock_status}",
+                inline=False # កំណត់ឱ្យចុះបន្ទាត់រៀបប្រអប់ស្អាតត្រូវទំហំទូរស័ព្ទជានិច្ច
             )
 
-        # 🔘 ផ្ទាំងប៊ូតុងបញ្ជាទិញរៀបជួរដេញតាមប្រអប់ខាងលើ
+        if self.bot.user.avatar:
+            embed.set_thumbnail(url=self.bot.user.avatar.url)
+        embed.set_footer(text=f"Requested by {ctx.author.display_name} • Market Version 2026", icon_url=ctx.author.avatar.url if ctx.author.avatar else None)
+
+        # 🔘 ថ្នាក់បង្កើតប៊ូតុងបញ្ជាទិញរៀបជួរគ្នាយ៉ាងសមសួននៅខាងក្រោមប្រអប់
         class ShopStockView(discord.ui.View):
             def __init__(self, author):
                 super().__init__(timeout=45.0)
@@ -74,7 +73,6 @@ class ShopCommand(commands.Cog):
                 self.setup_buttons()
 
             def setup_buttons(self):
-                # រៀបប៊ូតុងចុចទិញចំនួន ៥ ឱ្យត្រូវតាមលំដាប់ទំនិញទាំង ៥ ខាងលើ
                 for tier_name, data in ITEMS_POOL.items():
                     is_active = (tier_name == active_tier)
                     if is_active:
@@ -132,10 +130,6 @@ class ShopCommand(commands.Cog):
                     
                 return callback
 
-        if self.bot.user.avatar:
-            embed.set_thumbnail(url=self.bot.user.avatar.url)
-        embed.set_footer(text="Shop rotation resets every 4 minutes • Grow Garden 2026")
-        
         view = ShopStockView(author=ctx.author)
         await ctx.send(embed=embed, view=view)
 
