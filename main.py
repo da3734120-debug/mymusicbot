@@ -47,7 +47,25 @@ bot = commands.Bot(command_prefix="", intents=intents, case_insensitive=True)
 
 user_balances = load_data()
 active_players = set()
+def load_data_from_file():
+    if os.path.exists(DATA_FILE):
+        try:
+            with open(DATA_FILE, "r") as f: return json.load(f)
+        except: return {}
+    return {}
 
+def get_skin_style(user_id):
+    bal = get_balance(user_id)
+    active_skin = bal.get("active_skin", "Normal ✨")
+    
+    skin_colors = {
+        "Wooden Shield 🪵": discord.Color.light_gray(),
+        "Iron Sword ⚔️": discord.Color.blue(),
+        "Shadow Cloak 🔮": discord.Color.purple(),
+        "Dragon Relic 👑": discord.Color.orange(),
+        "⚡ GODSLAYER AURA ⚡": discord.Color.from_rgb(139, 0, 0)
+    }
+    return skin_colors.get(active_skin, discord.Color.blue()), active_skin
 @tasks.loop(minutes=5.0)
 async def auto_save_backup():
     save_data()
