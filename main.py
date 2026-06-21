@@ -54,9 +54,21 @@ def load_data_from_file():
         except: return {}
     return {}
 
+def load_data_from_file():
+    if os.path.exists(DATA_FILE):
+        try:
+            with open(DATA_FILE, "r") as f: return json.load(f)
+        except: return {}
+    return {}
+
 def get_skin_style(user_id):
     bal = get_balance(user_id)
+    # 🛡️ ថែមការការពារ៖ បើគណនីចាស់អត់ទាន់មាន active_skin គឺឱ្យវាស្គាល់ "Normal ✨" ភ្លាមមិនឱ្យគាំង
     active_skin = bal.get("active_skin", "Normal ✨")
+    if isinstance(active_skin, list) and len(active_skin) > 0:
+        active_skin = active_skin[0]
+    elif isinstance(active_skin, list):
+        active_skin = "Normal ✨"
     
     skin_colors = {
         "Wooden Shield 🪵": discord.Color.light_gray(),
@@ -66,6 +78,35 @@ def get_skin_style(user_id):
         "⚡ GODSLAYER AURA ⚡": discord.Color.from_rgb(139, 0, 0)
     }
     return skin_colors.get(active_skin, discord.Color.blue()), active_skin
+
+def get_balance(user_id):
+    global user_balances
+    uid = str(user_id)
+    
+    if os.path.exists(DATA_FILE):
+        try:
+            with open(DATA_FILE, "r") as f: user_balances = json.load(f)
+        except: pass
+
+    # 🛡️ ជួសជុលធំ៖ បើជាអ្នកលេងថ្មី គឺបង្កើតទិន្នន័យឱ្យមានកាតាប Skin ស្រាប់
+    if uid not in user_balances:
+        user_balances[uid] = {"wallet": 100, "bank": 0, "win": 0, "lost": 0, "inventory": ["Normal ✨"], "active_skin": "Normal ✨"}
+        save_data()
+        
+    # 🔄 ប្រព័ន្ធបំពេញទិន្នន័យស្វ័យប្រវត្ត (Auto-Migration) សម្រាប់គណនីចាស់ៗដូចជាបង i'm
+    if "inventory" not in user_balances[uid]:
+        user_balances[uid]["inventory"] = ["Normal ✨"]
+        save_data()
+    if "active_skin" not in user_balances[uid]:
+        user_balances[uid]["active_skin"] = "Normal ✨"
+        save_data()
+        
+    if "win" not in user_balances[uid]:
+        user_balances[uid]["win"] = 0
+        user_balances[uid]["lost"] = 0
+        save_data()
+        
+    return user_balances[uid]
 @tasks.loop(minutes=5.0)
 async def auto_save_backup():
     save_data()
