@@ -130,14 +130,26 @@ class ShopCommand(commands.Cog):
         view = ShopStockView(author=ctx.author)
         await ctx.send(embed=embed, view=view)
 
-    # 🎒 ពាក្យបញ្ជាកាតាបសន្សំមើល និងដូរពាក់ Skin (t/inventory)
-    @commands.command(name="t/inventory")
+  @commands.command(name="t/inventory")
     async def show_inventory(self, ctx):
         user_bal = main.get_balance(ctx.author.id)
-        skins = user_bal.get("inventory", ["Normal ✨"])
+        raw_skins = user_bal.get("inventory", ["Normal ✨"])
         active = user_bal.get("active_skin", "Normal ✨")
         
-        embed = discord.Embed(title=f"🎒 {ctx.author.display_name}'s Wardrobe", description="Select a skin below to change your global theme color:", color=discord.Color.blue())
+        # 🛡️ ជួសជុលធំ (Anti-Duplicate)៖ បម្លែងទៅជា set រួចបម្លែងមក list វិញ ដើម្បីលុបទិន្នន័យជាន់គ្នាចោលទាំងអស់ ការពារ Error 400 Bad Request
+        skins = list(set(raw_skins))
+        
+        # ប្រសិនបើ active skin ជាប្រភេទ List ដោយសារ Bug ចាស់ គឺទាញយកតែតួអក្សរដំបូងមកប្រើ
+        if isinstance(active, list) and len(active) > 0:
+            active = active[0]
+        elif isinstance(active, list):
+            active = "Normal ✨"
+            
+        embed = discord.Embed(
+            title=f"🎒 {ctx.author.display_name}'s Wardrobe", 
+            description="Select a skin below to change your global theme color:", 
+            color=discord.Color.blue()
+        )
         
         class InventoryView(discord.ui.View):
             def __init__(self, author):
@@ -146,18 +158,24 @@ class ShopCommand(commands.Cog):
                 self.setup_select()
 
             def setup_select(self):
-                options = [discord.SelectOption(label=s, description="Click to equip this skin theme", default=(s == active)) for s in skins]
+                # បង្កើតជម្រើសដោយសុវត្ថិភាព គ្មានឈ្មោះជាន់គ្នា
+                options = [discord.SelectOption(label=s, value=s, description="Click to equip this skin theme", default=(s == active)) for s in skins]
                 select = discord.ui.Select(placeholder="Choose a skin to wear...", options=options)
                 
                 async def select_callback(interaction: discord.Interaction):
-                    if interaction.user.id != self.author.id: return
-                    chosen_skin = select.values[0]
+                    if interaction.user.id != self.author.id: 
+                        await interaction.response.send_message("❌ You cannot change someone else's skin!", ephemeral=True)
+                        return
+                    
+                    chosen_skin = select.values[0] # ទាញយកតម្លៃ String ជម្រើសដំបូងបង្អស់
                     data_dict = main.load_data_from_file()
                     uid = str(interaction.user.id)
                     
-                    data_dict[uid]["active_skin"] = chosen_skin
-                    with open(main.DATA_FILE, "w") as f: json.dump(data_dict, f, indent=4)
-                    main.user_balances = data_dict
+                    if uid in data_dict:
+                        data_dict[uid]["active_skin"] = chosen_skin
+                        with open(main.DATA_FILE, "w") as f: 
+                            json.dump(data_dict, f, indent=4)
+                        main.user_balances = data_dict
                     
                     await interaction.response.send_message(f"✅ Skin changed to {chosen_skin}!", ephemeral=True)
                     
