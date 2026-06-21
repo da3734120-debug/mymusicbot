@@ -6,7 +6,6 @@ import json
 import os
 import main
 
-# 📦 ការកំណត់ទិន្នន័យ Skin តម្លៃ និងពណ៌ (ស្ទីល Grow a Garden)
 SKINS_POOL = {
     "Common": {"name": "Wooden Shield 🪵", "chance": 99, "price": 2000000, "color": discord.Color.light_gray(), "emoji": "⚪"},
     "Rare": {"name": "Iron Sword ⚔️", "chance": 60, "price": 3000000, "color": discord.Color.blue(), "emoji": "🔵"},
@@ -30,7 +29,7 @@ class ShopCommand(commands.Cog):
         tiers = list(SKINS_POOL.keys())
         weights = [SKINS_POOL[t]["chance"] for t in tiers]
         with self.shop_lock:
-            self.current_item_tier = random.choices(tiers, weights=weights, k=1)[0]
+            self.current_item_tier = random.choices(tiers, weights=weights, k=1)
         print(f"🔄 [Shop Stock Updated] Active Stock: {self.current_item_tier}")
 
     @commands.command(name="t/shop")
@@ -51,10 +50,8 @@ class ShopCommand(commands.Cog):
         for tier_name, data in SKINS_POOL.items():
             is_active = (tier_name == active_tier)
             stock_status = "🟢 **IN STOCK**" if is_active else "🔴 **OUT**"
-            
-            # ផ្ទៀងផ្ទាត់មើលថាធ្លាប់ទិញហើយឬនៅ
             unlocked = "inventory" in user_bal and data["name"] in user_bal["inventory"]
-            owned_status = " 🔒 [Locked]" if not unlocked else " ✅ [Owned]"
+            owned_status = " ✅ [Owned]" if unlocked else " 🔒 [Locked]"
             price_fmt = main.format_number(data['price'])
             
             embed.add_field(
@@ -76,13 +73,13 @@ class ShopCommand(commands.Cog):
                     is_equipped = "active_skin" in user_bal and user_bal["active_skin"] == data["name"]
                     
                     if is_equipped:
-                        btn = discord.ui.Button(label="Using", style=discord.ButtonStyle.secondary, disabled=True, custom_id=f"use_{tier_name}")
+                        btn = discord.ui.Button(label=f"Using: {tier_name}", style=discord.ButtonStyle.secondary, disabled=True)
                     elif has_skin:
-                        btn = discord.ui.Button(label="Equip", style=discord.ButtonStyle.primary, custom_id=f"eq_{tier_name}")
+                        btn = discord.ui.Button(label=f"Equip: {tier_name}", style=discord.ButtonStyle.primary)
                     elif is_active:
-                        btn = discord.ui.Button(label=f"Buy {tier_name}", style=discord.ButtonStyle.success, custom_id=f"buy_{tier_name}", emoji="🛒")
+                        btn = discord.ui.Button(label=f"Buy {tier_name}", style=discord.ButtonStyle.success, emoji="🛒")
                     else:
-                        btn = discord.ui.Button(label="Out", style=discord.ButtonStyle.danger, disabled=True, custom_id=f"nos_{tier_name}")
+                        btn = discord.ui.Button(label=f"Out: {tier_name}", style=discord.ButtonStyle.danger, disabled=True)
                         
                     btn.callback = self.make_callback(tier_name, data["price"], data["name"], has_skin)
                     self.add_item(btn)
@@ -99,7 +96,6 @@ class ShopCommand(commands.Cog):
                     if uid not in data_dict:
                         data_dict[uid] = {"wallet": 100, "bank": 0, "win": 0, "lost": 0, "inventory": ["Normal ✨"], "active_skin": "Normal ✨"}
 
-                    # 🔄 ករណីចុចពាក់ Skin (Equip Function)
                     if has_skin:
                         data_dict[uid]["active_skin"] = item_full_name
                         with open(main.DATA_FILE, "w") as f: json.dump(data_dict, f, indent=4)
@@ -107,12 +103,13 @@ class ShopCommand(commands.Cog):
                         await interaction.response.send_message(f"✅ Successfully equipped {item_full_name} skin!", ephemeral=True)
                         return
 
-                    # 🛒 ករណីចុចទិញ Skin ថ្មី (Buy Function)
                     if data_dict[uid]["wallet"] < price:
                         await interaction.response.send_message(f"❌ You need {main.format_number(price)} {main.emoji} to buy this skin!", ephemeral=True)
                         return
                     
                     data_dict[uid]["wallet"] -= price
+                    if "inventory" not in data_dict[uid]:
+                        data_dict[uid]["inventory"] = ["Normal ✨"]
                     data_dict[uid]["inventory"].append(item_full_name)
                     data_dict[uid]["active_skin"] = item_full_name
                     
@@ -130,18 +127,17 @@ class ShopCommand(commands.Cog):
         view = ShopStockView(author=ctx.author)
         await ctx.send(embed=embed, view=view)
 
-  @commands.command(name="t/inventory")
+    # 🔒 ជួសជុលធំ៖ កែសម្រួលការដកឃ្លា (Indentation) ឱ្យត្រូវជួរស្ដង់ដារភាសា Python មិនឱ្យលោត Error ទៀតទេ
+    @commands.command(name="t/inventory")
     async def show_inventory(self, ctx):
         user_bal = main.get_balance(ctx.author.id)
         raw_skins = user_bal.get("inventory", ["Normal ✨"])
         active = user_bal.get("active_skin", "Normal ✨")
         
-        # 🛡️ ជួសជុលធំ (Anti-Duplicate)៖ បម្លែងទៅជា set រួចបម្លែងមក list វិញ ដើម្បីលុបទិន្នន័យជាន់គ្នាចោលទាំងអស់ ការពារ Error 400 Bad Request
         skins = list(set(raw_skins))
         
-        # ប្រសិនបើ active skin ជាប្រភេទ List ដោយសារ Bug ចាស់ គឺទាញយកតែតួអក្សរដំបូងមកប្រើ
         if isinstance(active, list) and len(active) > 0:
-            active = active[0]
+            active = active
         elif isinstance(active, list):
             active = "Normal ✨"
             
@@ -158,7 +154,6 @@ class ShopCommand(commands.Cog):
                 self.setup_select()
 
             def setup_select(self):
-                # បង្កើតជម្រើសដោយសុវត្ថិភាព គ្មានឈ្មោះជាន់គ្នា
                 options = [discord.SelectOption(label=s, value=s, description="Click to equip this skin theme", default=(s == active)) for s in skins]
                 select = discord.ui.Select(placeholder="Choose a skin to wear...", options=options)
                 
@@ -166,8 +161,7 @@ class ShopCommand(commands.Cog):
                     if interaction.user.id != self.author.id: 
                         await interaction.response.send_message("❌ You cannot change someone else's skin!", ephemeral=True)
                         return
-                    
-                    chosen_skin = select.values[0] # ទាញយកតម្លៃ String ជម្រើសដំបូងបង្អស់
+                        chosen_skin = select.values
                     data_dict = main.load_data_from_file()
                     uid = str(interaction.user.id)
                     
