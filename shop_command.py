@@ -29,7 +29,8 @@ class ShopCommand(commands.Cog):
         tiers = list(SKINS_POOL.keys())
         weights = [SKINS_POOL[t]["chance"] for t in tiers]
         with self.shop_lock:
-            self.current_item_tier = random.choices(tiers, weights=weights, k=1)
+            # 🛠️ ជួសជុលទី១៖ ថែម [0] ដើម្បីយកតម្លៃជា String ការពារកុំឱ្យជាប់ប្រភេទ List []
+            self.current_item_tier = random.choices(tiers, weights=weights, k=1)[0]
         print(f"🔄 [Shop Stock Updated] Active Stock: {self.current_item_tier}")
 
     @commands.command(name="t/shop")
@@ -83,8 +84,7 @@ class ShopCommand(commands.Cog):
                         
                     btn.callback = self.make_callback(tier_name, data["price"], data["name"], has_skin)
                     self.add_item(btn)
-
-            def make_callback(self, tier_name, price, item_full_name, has_skin):
+                    def make_callback(self, tier_name, price, item_full_name, has_skin):
                 async def callback(interaction: discord.Interaction):
                     if interaction.user.id != self.author.id:
                         await interaction.response.send_message("❌ You cannot interact with this menu!", ephemeral=True)
@@ -127,7 +127,6 @@ class ShopCommand(commands.Cog):
         view = ShopStockView(author=ctx.author)
         await ctx.send(embed=embed, view=view)
 
-    # 🔒 ជួសជុលធំ៖ កែសម្រួលការដកឃ្លា (Indentation) ឱ្យត្រូវជួរស្ដង់ដារភាសា Python មិនឱ្យលោត Error ទៀតទេ
     @commands.command(name="t/inventory")
     async def show_inventory(self, ctx):
         user_bal = main.get_balance(ctx.author.id)
@@ -136,9 +135,10 @@ class ShopCommand(commands.Cog):
         
         skins = list(set(raw_skins))
         
+        # 🛠️ ជួសជុលទី២៖ ប្រសិនបើ active ធ្លាប់ជាប់ជាប្រភេទ List វានឹងទាញយក String នៅក្នុងនោះមកវិញ
         if isinstance(active, list) and len(active) > 0:
-            active = active
-        elif isinstance(active, list):
+            active = active[0]
+        elif isinstance(active, list) or not active:
             active = "Normal ✨"
             
         embed = discord.Embed(
@@ -161,7 +161,9 @@ class ShopCommand(commands.Cog):
                     if interaction.user.id != self.author.id: 
                         await interaction.response.send_message("❌ You cannot change someone else's skin!", ephemeral=True)
                         return
-                        chosen_skin = select.values
+                    
+                    # 🛠️ ជួសជុលទី៣៖ ថែម [0] ត្រង់ select.values[0] ដើម្បីយកតែតម្លៃអក្សរ (String) មិនយកប្រភេទ List
+                    chosen_skin = select.values[0]
                     data_dict = main.load_data_from_file()
                     uid = str(interaction.user.id)
                     
@@ -175,7 +177,7 @@ class ShopCommand(commands.Cog):
                     
                 select.callback = select_callback
                 self.add_item(select)
-                
+
         view = InventoryView(author=ctx.author)
         await ctx.send(embed=embed, view=view)
 
